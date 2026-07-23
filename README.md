@@ -95,5 +95,5 @@ npm run build               # Build production + PWA
 npm run preview             # Xem bản production local
 ```
 
-Xem hướng dẫn deploy và cài app tại
+Xem hướng dẫn deploy Cloudflare Pages, cấu hình Supabase production và cài app tại
 [`docs/DEPLOY_AND_INSTALL.md`](docs/DEPLOY_AND_INSTALL.md).

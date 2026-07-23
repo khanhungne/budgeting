@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+}
+
+:root {
+  font-family: var(--font-sans);
+  color: #17231f;
+  background: #f5f7f2;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: #e8ece6;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 3px solid rgb(16 185 129 / 35%);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+input::selection,
+textarea::selection {
+  color: #113f36;
+  background: rgb(249 216 143 / 70%);
+}
+
+input[type="date"] {
+  appearance: none;
+  min-height: 3.5rem;
+}
+
+@media (display-mode: standalone) {
+  body {
+    user-select: none;
+  }
+
+  input {
+    user-select: text;
+  }
+}
+
+@media (min-width: 520px) {
+  body {
+    background:
+      radial-gradient(circle at 20% 10%, rgb(216 235 220 / 80%), transparent 32%),
+      #e8ece6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

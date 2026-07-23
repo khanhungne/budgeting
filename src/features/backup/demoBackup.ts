@@ -1,4 +1,5 @@
 import { DEMO_BUDGET_STORAGE_KEY } from '../budgets/api/budgets'
+import { readLocalArray, writeLocalArray } from '../../lib/localStorage'
 import type { MonthlyBudget } from '../budgets/types'
 import { DEMO_LOTTERY_STORAGE_KEY } from '../lottery/api/lottery'
 import { DEMO_LOTTERY_LIMIT_STORAGE_KEY } from '../lottery/api/limits'
@@ -25,14 +26,7 @@ type DemoBackup = {
 }
 
 const readArray = <T>(key: string): T[] => {
-  const value = window.localStorage.getItem(key)
-  if (!value) return []
-  try {
-    const parsed = JSON.parse(value)
-    return Array.isArray(parsed) ? (parsed as T[]) : []
-  } catch {
-    return []
-  }
+  return readLocalArray<T>(key) ?? []
 }
 
 const isTransaction = (value: unknown): value is Transaction => {
@@ -286,11 +280,11 @@ export const importDemoBackup = async (file: File) => {
     created_at: limit.created_at || now,
   }))
 
-  window.localStorage.setItem(DEMO_WALLET_STORAGE_KEY, JSON.stringify(wallets))
-  window.localStorage.setItem(DEMO_TRANSACTION_STORAGE_KEY, JSON.stringify(transactions))
-  window.localStorage.setItem(DEMO_BUDGET_STORAGE_KEY, JSON.stringify(budgets))
-  window.localStorage.setItem(DEMO_LOTTERY_STORAGE_KEY, JSON.stringify(lotteryEntries))
-  window.localStorage.setItem(DEMO_LOTTERY_LIMIT_STORAGE_KEY, JSON.stringify(lotteryLimits))
+  writeLocalArray(DEMO_WALLET_STORAGE_KEY, wallets)
+  writeLocalArray(DEMO_TRANSACTION_STORAGE_KEY, transactions)
+  writeLocalArray(DEMO_BUDGET_STORAGE_KEY, budgets)
+  writeLocalArray(DEMO_LOTTERY_STORAGE_KEY, lotteryEntries)
+  writeLocalArray(DEMO_LOTTERY_LIMIT_STORAGE_KEY, lotteryLimits)
 
   return {
     transactionCount: transactions.length,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createTransaction,
   fetchTransactions,
@@ -12,8 +12,10 @@ export const useTransactions = (userId: string, month: string) => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const refresh = useCallback(async () => {
+    const requestId = ++requestIdRef.current
     if (!userId) {
       setTransactions([])
       setLoading(false)
@@ -22,11 +24,14 @@ export const useTransactions = (userId: string, month: string) => {
     setLoading(true)
     setError(null)
     try {
-      setTransactions(await fetchTransactions(month))
+      const rows = await fetchTransactions(userId, month)
+      if (requestId === requestIdRef.current) setTransactions(rows)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không tải được giao dịch.')
+      if (requestId === requestIdRef.current) {
+        setError(reason instanceof Error ? reason.message : 'Không tải được giao dịch.')
+      }
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
   }, [month, userId])
 
@@ -36,6 +41,8 @@ export const useTransactions = (userId: string, month: string) => {
 
   const save = async (input: TransactionInput, editingId?: string) => {
     if (!userId) throw new Error('Chưa xác định được người dùng.')
+    requestIdRef.current += 1
+    setLoading(false)
     setSaving(true)
     setError(null)
     try {
@@ -67,6 +74,8 @@ export const useTransactions = (userId: string, month: string) => {
   }
 
   const remove = async (id: string) => {
+    requestIdRef.current += 1
+    setLoading(false)
     setSaving(true)
     setError(null)
     try {

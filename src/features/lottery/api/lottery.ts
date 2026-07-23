@@ -1,36 +1,27 @@
 import { getMonthBounds } from '../../../lib/dates'
-import { isSupabaseConfigured, supabase } from '../../../lib/supabase'
+import { readLocalArray, writeLocalArray } from '../../../lib/localStorage'
+import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase'
 import type { LotteryEntry, LotteryEntryInput } from '../types'
 
 export const DEMO_LOTTERY_STORAGE_KEY = 'vi-nho.demo.lottery.v1'
+const LOTTERY_COLUMNS =
+  'id,user_id,play_type,region,station,numbers,stake,payout,status,draw_date,note,created_at,updated_at'
 
 const readDemoEntries = (): LotteryEntry[] => {
-  const value = window.localStorage.getItem(DEMO_LOTTERY_STORAGE_KEY)
-  if (!value) return []
-  try {
-    const parsed = JSON.parse(value)
-    if (!Array.isArray(parsed)) return []
-    return (parsed as LotteryEntry[]).map((entry) => ({
+  return (readLocalArray<LotteryEntry>(DEMO_LOTTERY_STORAGE_KEY) ?? []).map(
+    (entry) => ({
       ...entry,
       region: entry.region ?? 'north',
       station: entry.station?.trim() || 'Hà Nội',
-    }))
-  } catch {
-    window.localStorage.removeItem(DEMO_LOTTERY_STORAGE_KEY)
-    return []
-  }
+    }),
+  )
 }
 
 const writeDemoEntries = (entries: LotteryEntry[]) => {
-  window.localStorage.setItem(DEMO_LOTTERY_STORAGE_KEY, JSON.stringify(entries))
+  writeLocalArray(DEMO_LOTTERY_STORAGE_KEY, entries)
 }
 
-const requireClient = () => {
-  if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-  return supabase
-}
-
-export const fetchLotteryEntries = async (month: string) => {
+export const fetchLotteryEntries = async (userId: string, month: string) => {
   const { start, nextMonth } = getMonthBounds(month)
 
   if (!isSupabaseConfigured) {
@@ -43,9 +34,11 @@ export const fetchLotteryEntries = async (month: string) => {
       )
   }
 
-  const { data, error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { data, error } = await client
     .from('lottery_entries')
-    .select('*')
+    .select(LOTTERY_COLUMNS)
+    .eq('user_id', userId)
     .gte('draw_date', start)
     .lt('draw_date', nextMonth)
     .order('draw_date', { ascending: false })
@@ -75,10 +68,11 @@ export const createLotteryEntry = async (userId: string, input: LotteryEntryInpu
     return entry
   }
 
-  const { data, error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { data, error } = await client
     .from('lottery_entries')
     .insert({ ...normalized, user_id: userId })
-    .select()
+    .select(LOTTERY_COLUMNS)
     .single()
 
   if (error) throw error
@@ -105,11 +99,12 @@ export const updateLotteryEntry = async (id: string, input: LotteryEntryInput) =
     return updated
   }
 
-  const { data, error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { data, error } = await client
     .from('lottery_entries')
     .update(normalized)
     .eq('id', id)
-    .select()
+    .select(LOTTERY_COLUMNS)
     .single()
 
   if (error) throw error
@@ -122,6 +117,7 @@ export const removeLotteryEntry = async (id: string) => {
     return
   }
 
-  const { error } = await requireClient().from('lottery_entries').delete().eq('id', id)
+  const client = await getSupabaseClient()
+  const { error } = await client.from('lottery_entries').delete().eq('id', id)
   if (error) throw error
 }

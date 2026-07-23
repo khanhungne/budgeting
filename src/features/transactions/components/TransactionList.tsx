@@ -1,4 +1,5 @@
 import { Pencil, ReceiptText, Trash2 } from 'lucide-react'
+import { useMemo } from 'react'
 import { formatCurrency, formatDate } from '../../../lib/format'
 import { getCategory } from '../constants'
 import type { Transaction } from '../types'
@@ -25,6 +26,11 @@ export const TransactionList = ({
   onEdit,
   onDelete,
 }: TransactionListProps) => {
+  const walletById = useMemo(
+    () => new Map(wallets.map((wallet) => [wallet.id, wallet])),
+    [wallets],
+  )
+
   if (loading) {
     return (
       <div className="space-y-3">
@@ -55,7 +61,9 @@ export const TransactionList = ({
     <div className="space-y-2">
       {visibleTransactions.map((transaction) => {
         const category = getCategory(transaction.category)
-        const wallet = wallets.find((item) => item.id === transaction.wallet_id)
+        const wallet = transaction.wallet_id
+          ? walletById.get(transaction.wallet_id)
+          : undefined
         const isIncome = transaction.kind === 'income'
 
         return (

@@ -1,10 +1,13 @@
-import { isSupabaseConfigured, supabase } from '../../../lib/supabase'
+import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase'
+import { readLocalArray, writeLocalArray } from '../../../lib/localStorage'
 import { DEMO_TRANSACTION_STORAGE_KEY } from '../../transactions/api/transactions'
 import type { Transaction } from '../../transactions/types'
 import { DEMO_DEFAULT_WALLET_ID } from '../constants'
 import type { Wallet, WalletInput } from '../types'
 
 export const DEMO_WALLET_STORAGE_KEY = 'vi-nho.demo.wallets.v1'
+const WALLET_COLUMNS =
+  'id,user_id,name,kind,opening_balance,color,is_archived,created_at,updated_at'
 
 const createDefaultWallet = (userId: string): Wallet => {
   const now = new Date().toISOString()
@@ -22,51 +25,30 @@ const createDefaultWallet = (userId: string): Wallet => {
 }
 
 const readDemoWallets = (userId: string): Wallet[] => {
-  const value = window.localStorage.getItem(DEMO_WALLET_STORAGE_KEY)
-  if (value) {
-    try {
-      const parsed = JSON.parse(value)
-      if (Array.isArray(parsed) && parsed.length) return parsed as Wallet[]
-    } catch {
-      window.localStorage.removeItem(DEMO_WALLET_STORAGE_KEY)
-    }
-  }
+  const stored = readLocalArray<Wallet>(DEMO_WALLET_STORAGE_KEY)
+  if (stored?.length) return stored
   const wallets = [createDefaultWallet(userId)]
-  window.localStorage.setItem(DEMO_WALLET_STORAGE_KEY, JSON.stringify(wallets))
+  writeLocalArray(DEMO_WALLET_STORAGE_KEY, wallets)
   return wallets
 }
 
 const writeDemoWallets = (wallets: Wallet[]) => {
-  window.localStorage.setItem(DEMO_WALLET_STORAGE_KEY, JSON.stringify(wallets))
-}
-
-const requireClient = () => {
-  if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-  return supabase
+  writeLocalArray(DEMO_WALLET_STORAGE_KEY, wallets)
 }
 
 export const fetchWallets = async (userId: string) => {
   if (!isSupabaseConfigured) return readDemoWallets(userId)
 
-  const client = requireClient()
+  const client = await getSupabaseClient()
   const { data, error } = await client
     .from('wallets')
-    .select('*')
+    .select(WALLET_COLUMNS)
+    .eq('user_id', userId)
     .order('is_archived')
     .order('created_at')
 
   if (error) throw error
-  if (data?.length) {
-    const wallets = data as Wallet[]
-    const defaultWallet =
-      wallets.find((wallet) => !wallet.is_archived) ?? wallets[0]
-    const { error: migrationError } = await client
-      .from('transactions')
-      .update({ wallet_id: defaultWallet.id })
-      .is('wallet_id', null)
-    if (migrationError) throw migrationError
-    return wallets
-  }
+  if (data?.length) return data as Wallet[]
 
   const { data: created, error: createError } = await client
     .from('wallets')
@@ -77,7 +59,7 @@ export const fetchWallets = async (userId: string) => {
       opening_balance: 0,
       color: '#1c5f50',
     })
-    .select()
+    .select(WALLET_COLUMNS)
     .single()
 
   if (createError) throw createError
@@ -96,17 +78,30 @@ export const fetchWalletBalances = async (wallets: Wallet[]) => {
 
   let transactions: Pick<Transaction, 'wallet_id' | 'kind' | 'amount'>[] = []
   if (!isSupabaseConfigured) {
-    const stored = window.localStorage.getItem(DEMO_TRANSACTION_STORAGE_KEY)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed)) transactions = parsed
-      } catch {
-        // Transaction adapter sẽ tự khôi phục nếu dữ liệu local hỏng.
-      }
-    }
+    transactions =
+      readLocalArray<Pick<Transaction, 'wallet_id' | 'kind' | 'amount'>>(
+        DEMO_TRANSACTION_STORAGE_KEY,
+      ) ?? []
   } else {
-    const { data, error } = await requireClient()
+    const client = await getSupabaseClient()
+    const { data: aggregated } = await client
+      .from('wallet_balances')
+      .select('wallet_id,balance')
+      .eq('user_id', wallets[0]?.user_id ?? '')
+
+    if (aggregated) {
+      for (const row of aggregated as Array<{
+        wallet_id: string
+        balance: number | string
+      }>) {
+        if (balances[row.wallet_id] !== undefined) {
+          balances[row.wallet_id] = Number(row.balance)
+        }
+      }
+      return balances
+    }
+
+    const { data, error } = await client
       .from('transactions')
       .select('wallet_id,kind,amount')
     if (error) throw error
@@ -146,11 +141,11 @@ export const saveWallet = async (
     return saved
   }
 
-  const client = requireClient()
+  const client = await getSupabaseClient()
   const query = editingId
     ? client.from('wallets').update(normalized).eq('id', editingId)
     : client.from('wallets').insert({ ...normalized, user_id: userId })
-  const { data, error } = await query.select().single()
+  const { data, error } = await query.select(WALLET_COLUMNS).single()
   if (error) throw error
   return data as Wallet
 }
@@ -168,7 +163,8 @@ export const setWalletArchived = async (userId: string, id: string, archived: bo
     return
   }
 
-  const { error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { error } = await client
     .from('wallets')
     .update({ is_archived: archived })
     .eq('id', id)

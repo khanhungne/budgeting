@@ -1,27 +1,16 @@
-import { isSupabaseConfigured, supabase } from '../../../lib/supabase'
+import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase'
+import { readLocalArray, writeLocalArray } from '../../../lib/localStorage'
 import type { LotteryMonthlyLimit } from '../limitTypes'
 
 export const DEMO_LOTTERY_LIMIT_STORAGE_KEY = 'vi-nho.demo.lottery-limits.v1'
+const LIMIT_COLUMNS = 'id,user_id,month_start,amount,created_at,updated_at'
 
 const readDemoLimits = (): LotteryMonthlyLimit[] => {
-  const stored = window.localStorage.getItem(DEMO_LOTTERY_LIMIT_STORAGE_KEY)
-  if (!stored) return []
-  try {
-    const parsed = JSON.parse(stored)
-    return Array.isArray(parsed) ? (parsed as LotteryMonthlyLimit[]) : []
-  } catch {
-    window.localStorage.removeItem(DEMO_LOTTERY_LIMIT_STORAGE_KEY)
-    return []
-  }
+  return readLocalArray<LotteryMonthlyLimit>(DEMO_LOTTERY_LIMIT_STORAGE_KEY) ?? []
 }
 
 const writeDemoLimits = (limits: LotteryMonthlyLimit[]) => {
-  window.localStorage.setItem(DEMO_LOTTERY_LIMIT_STORAGE_KEY, JSON.stringify(limits))
-}
-
-const requireClient = () => {
-  if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-  return supabase
+  writeLocalArray(DEMO_LOTTERY_LIMIT_STORAGE_KEY, limits)
 }
 
 export const fetchLotteryMonthlyLimit = async (userId: string, month: string) => {
@@ -34,9 +23,11 @@ export const fetchLotteryMonthlyLimit = async (userId: string, month: string) =>
     )
   }
 
-  const { data, error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { data, error } = await client
     .from('lottery_limits')
-    .select('*')
+    .select(LIMIT_COLUMNS)
+    .eq('user_id', userId)
     .eq('month_start', monthStart)
     .maybeSingle()
 
@@ -70,13 +61,14 @@ export const saveLotteryMonthlyLimit = async (
     return saved
   }
 
-  const { data, error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { data, error } = await client
     .from('lottery_limits')
     .upsert(
       { user_id: userId, month_start: monthStart, amount },
       { onConflict: 'user_id,month_start' },
     )
-    .select()
+    .select(LIMIT_COLUMNS)
     .single()
 
   if (error) throw error

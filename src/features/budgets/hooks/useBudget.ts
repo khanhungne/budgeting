@@ -1,29 +1,34 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchMonthlyBudget, saveMonthlyBudget } from '../api/budgets'
 import type { MonthlyBudget } from '../types'
 
-export const useBudget = (userId: string, month: string) => {
+export const useBudget = (userId: string, month: string, enabled = true) => {
   const [budget, setBudget] = useState<MonthlyBudget | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const refresh = useCallback(async () => {
-    if (!userId) {
-      setBudget(null)
+    const requestId = ++requestIdRef.current
+    if (!userId || !enabled) {
+      if (!userId) setBudget(null)
       setLoading(false)
       return
     }
     setLoading(true)
     setError(null)
     try {
-      setBudget(await fetchMonthlyBudget(userId, month))
+      const nextBudget = await fetchMonthlyBudget(userId, month)
+      if (requestId === requestIdRef.current) setBudget(nextBudget)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không tải được ngân sách.')
+      if (requestId === requestIdRef.current) {
+        setError(reason instanceof Error ? reason.message : 'Không tải được ngân sách.')
+      }
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [month, userId])
+  }, [enabled, month, userId])
 
   useEffect(() => {
     void refresh()
@@ -31,6 +36,8 @@ export const useBudget = (userId: string, month: string) => {
 
   const save = async (amount: number) => {
     if (!userId) throw new Error('Chưa xác định được người dùng.')
+    requestIdRef.current += 1
+    setLoading(false)
     setSaving(true)
     setError(null)
     try {

@@ -16,8 +16,25 @@ await new Promise((resolve, reject) => {
 
 let callId = 0
 const pending = new Map()
+const runtimeErrors = []
+const loadedScripts = new Set()
 socket.on('message', (raw) => {
   const message = JSON.parse(raw.toString())
+  if (message.method === 'Runtime.exceptionThrown') {
+    runtimeErrors.push(message.params.exceptionDetails.text)
+  }
+  if (
+    message.method === 'Log.entryAdded' &&
+    message.params.entry.level === 'error'
+  ) {
+    runtimeErrors.push(message.params.entry.text)
+  }
+  if (
+    message.method === 'Network.responseReceived' &&
+    message.params.type === 'Script'
+  ) {
+    loadedScripts.add(new URL(message.params.response.url).pathname)
+  }
   if (!message.id || !pending.has(message.id)) return
   const { resolve, reject } = pending.get(message.id)
   pending.delete(message.id)
@@ -37,6 +54,8 @@ const pause = (milliseconds) =>
 
 await call('Page.enable')
 await call('Runtime.enable')
+await call('Log.enable')
+await call('Network.enable')
 await call('Emulation.setDeviceMetricsOverride', {
   width: 390,
   height: 844,
@@ -90,6 +109,7 @@ for (const [slug, label] of tabs) {
         clientWidth: width,
         scrollWidth: document.documentElement.scrollWidth,
         overflowing,
+        runtimeErrors: ${JSON.stringify(runtimeErrors)},
       }
     })()`,
   })
@@ -103,4 +123,5 @@ for (const [slug, label] of tabs) {
 }
 
 socket.close()
+results.push({ loadedScripts: [...loadedScripts].sort() })
 process.stdout.write(`${JSON.stringify(results, null, 2)}\n`)

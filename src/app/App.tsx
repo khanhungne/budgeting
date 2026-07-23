@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { AppShell, type AppTab } from '../components/layout/AppShell'
 import { PwaUpdateToast } from '../components/pwa/PwaUpdateToast'
 import { LoadingScreen } from '../components/ui/LoadingScreen'
@@ -18,11 +18,24 @@ import type { Transaction } from '../features/transactions/types'
 import { useWallets } from '../features/wallets/hooks/useWallets'
 import { currentMonth } from '../lib/dates'
 import { isSupabaseConfigured } from '../lib/supabase'
-import { AccountPage } from '../pages/AccountPage'
 import { DashboardPage } from '../pages/DashboardPage'
-import { LotteryPage } from '../pages/LotteryPage'
-import { StatisticsPage } from '../pages/StatisticsPage'
-import { TransactionsPage } from '../pages/TransactionsPage'
+
+const AccountPage = lazy(() =>
+  import('../pages/AccountPage').then((module) => ({ default: module.AccountPage })),
+)
+const LotteryPage = lazy(() =>
+  import('../pages/LotteryPage').then((module) => ({ default: module.LotteryPage })),
+)
+const StatisticsPage = lazy(() =>
+  import('../pages/StatisticsPage').then((module) => ({
+    default: module.StatisticsPage,
+  })),
+)
+const TransactionsPage = lazy(() =>
+  import('../pages/TransactionsPage').then((module) => ({
+    default: module.TransactionsPage,
+  })),
+)
 
 const DEMO_USER = {
   id: 'demo-local-user',
@@ -40,11 +53,25 @@ export const App = () => {
   const demoMode = !isSupabaseConfigured
   const activeUser = demoMode ? DEMO_USER : user
   const transactionState = useTransactions(activeUser?.id ?? '', month)
-  const walletState = useWallets(activeUser?.id ?? '')
-  const budgetState = useBudget(activeUser?.id ?? '', month)
-  const lotteryState = useLotteryEntries(activeUser?.id ?? '', month)
-  const lotteryLimitState = useLotteryLimit(activeUser?.id ?? '', month)
-  const trendState = useTransactionTrends(activeUser?.id ?? '', month, trendMonths)
+  const walletState = useWallets(activeUser?.id ?? '', activeTab === 'account')
+  const budgetState = useBudget(activeUser?.id ?? '', month, activeTab === 'home')
+  const lotteryState = useLotteryEntries(
+    activeUser?.id ?? '',
+    month,
+    activeTab === 'lottery',
+  )
+  const lotteryLimitState = useLotteryLimit(
+    activeUser?.id ?? '',
+    month,
+    activeTab === 'lottery',
+  )
+  const trendState = useTransactionTrends(
+    activeUser?.id ?? '',
+    month,
+    trendMonths,
+    transactionState.transactions,
+    activeTab === 'statistics',
+  )
 
   if (!demoMode && authLoading) return <LoadingScreen />
   if (!demoMode && recoveryMode) return <PasswordRecoveryScreen />
@@ -65,8 +92,6 @@ export const App = () => {
     if (window.confirm(`Xoá “${label}”? Thao tác này không thể hoàn tác.`)) {
       try {
         await transactionState.remove(transaction.id)
-        await walletState.refresh()
-        await trendState.refresh()
       } catch {
         // Hook đã đưa lỗi lên giao diện.
       }
@@ -76,6 +101,14 @@ export const App = () => {
   return (
     <>
       <AppShell activeTab={activeTab} onTabChange={setActiveTab} onAdd={openCreate}>
+        <Suspense
+          fallback={
+            <div className="px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
+              <div className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+              <div className="mt-5 h-56 animate-pulse rounded-[1.75rem] bg-slate-100" />
+            </div>
+          }
+        >
         {activeTab === 'home' && (
           <DashboardPage
             user={activeUser}
@@ -160,6 +193,7 @@ export const App = () => {
             onWalletToggle={walletState.toggleArchived}
           />
         )}
+        </Suspense>
       </AppShell>
 
       <TransactionForm
@@ -171,8 +205,8 @@ export const App = () => {
         onClose={() => setFormOpen(false)}
         onSave={async (input, editingId) => {
           await transactionState.save(input, editingId)
-          await walletState.refresh()
-          await trendState.refresh()
+          if (activeTab === 'account') await walletState.refreshBalances()
+          if (activeTab === 'statistics') await trendState.refresh()
         }}
       />
       <PwaUpdateToast />

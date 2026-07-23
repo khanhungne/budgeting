@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { shiftMonth } from '../../../lib/dates'
-import { fetchTransactionsRange } from '../api/transactions'
+import {
+  fetchTransactionsRange,
+  type TransactionTrendRow,
+} from '../api/transactions'
 import type { Transaction } from '../types'
 
 export type TrendMonths = 3 | 6 | 12
@@ -13,7 +16,7 @@ export type MonthlyTrend = {
 }
 
 export const aggregateMonthlyTrends = (
-  transactions: Transaction[],
+  transactions: TransactionTrendRow[],
   endMonth: string,
   months: TrendMonths,
 ): MonthlyTrend[] =>
@@ -41,35 +44,62 @@ export const useTransactionTrends = (
   userId: string,
   endMonth: string,
   months: TrendMonths,
+  currentTransactions: Transaction[],
+  enabled = true,
 ) => {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [historicalTransactions, setHistoricalTransactions] = useState<
+    TransactionTrendRow[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const refresh = useCallback(async () => {
-    if (!userId) {
-      setTransactions([])
+    const requestId = ++requestIdRef.current
+    if (!userId || !enabled) {
+      if (!userId) setHistoricalTransactions([])
       setLoading(false)
       return
     }
     setLoading(true)
     setError(null)
     try {
-      setTransactions(await fetchTransactionsRange(shiftMonth(endMonth, 1 - months), endMonth))
+      const rows = await fetchTransactionsRange(
+        userId,
+        shiftMonth(endMonth, 1 - months),
+        shiftMonth(endMonth, -1),
+      )
+      if (requestId === requestIdRef.current) setHistoricalTransactions(rows)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không tải được xu hướng nhiều tháng.')
+      if (requestId === requestIdRef.current) {
+        setError(
+          reason instanceof Error ? reason.message : 'Không tải được xu hướng nhiều tháng.',
+        )
+      }
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [endMonth, months, userId])
+  }, [enabled, endMonth, months, userId])
 
   useEffect(() => {
     void refresh()
   }, [refresh])
 
   const trends = useMemo(
-    () => aggregateMonthlyTrends(transactions, endMonth, months),
-    [endMonth, months, transactions],
+    () =>
+      aggregateMonthlyTrends(
+        [
+          ...historicalTransactions,
+          ...currentTransactions.map(({ kind, amount, occurred_on }) => ({
+            kind,
+            amount,
+            occurred_on,
+          })),
+        ],
+        endMonth,
+        months,
+      ),
+    [currentTransactions, endMonth, historicalTransactions, months],
   )
 
   return { trends, loading, error, refresh }

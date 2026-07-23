@@ -20,12 +20,17 @@ frontend.
 4. Dán vào SQL Editor và nhấn **Run**.
 5. Mở **Table Editor** và kiểm tra đã có năm bảng `wallets`, `transactions`,
    `monthly_budgets`, `lottery_entries` và `lottery_limits`.
-6. Mở phần policies của từng bảng và kiểm tra có đủ bốn policy `select`,
+6. Mở **Database → Views** và kiểm tra có view `wallet_balances`.
+7. Mở phần policies của từng bảng và kiểm tra có đủ bốn policy `select`,
    `insert`, `update`, `delete`.
 
 RLS dùng `auth.uid() = user_id`, vì vậy mỗi tài khoản chỉ đọc và sửa được giao
 dịch, ví, ngân sách và sổ theo dõi của chính tài khoản đó. Số tiền sử dụng kiểu
 số nguyên VND.
+
+Nếu đã từng chạy phiên bản schema cũ, hãy chạy lại toàn bộ file mới. Script có
+phần nâng cấp idempotent để thêm index, view tổng hợp số dư và các constraint còn
+thiếu.
 
 Ở giai đoạn MVP không cần làm một trang admin riêng. Supabase Dashboard dùng để
 quản trị kỹ thuật; không dùng service key trong frontend và không tạo policy cho

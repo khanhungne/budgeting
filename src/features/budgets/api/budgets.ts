@@ -1,26 +1,16 @@
-import { isSupabaseConfigured, supabase } from '../../../lib/supabase'
+import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase'
+import { readLocalArray, writeLocalArray } from '../../../lib/localStorage'
 import type { MonthlyBudget } from '../types'
 
 export const DEMO_BUDGET_STORAGE_KEY = 'vi-nho.demo.budgets.v1'
+const BUDGET_COLUMNS = 'id,user_id,month_start,amount,created_at,updated_at'
 
 const readDemoBudgets = (): MonthlyBudget[] => {
-  const stored = window.localStorage.getItem(DEMO_BUDGET_STORAGE_KEY)
-  if (!stored) return []
-  try {
-    return JSON.parse(stored) as MonthlyBudget[]
-  } catch {
-    window.localStorage.removeItem(DEMO_BUDGET_STORAGE_KEY)
-    return []
-  }
+  return readLocalArray<MonthlyBudget>(DEMO_BUDGET_STORAGE_KEY) ?? []
 }
 
 const writeDemoBudgets = (budgets: MonthlyBudget[]) => {
-  window.localStorage.setItem(DEMO_BUDGET_STORAGE_KEY, JSON.stringify(budgets))
-}
-
-const requireClient = () => {
-  if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-  return supabase
+  writeLocalArray(DEMO_BUDGET_STORAGE_KEY, budgets)
 }
 
 export const fetchMonthlyBudget = async (userId: string, month: string) => {
@@ -34,9 +24,11 @@ export const fetchMonthlyBudget = async (userId: string, month: string) => {
     )
   }
 
-  const { data, error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { data, error } = await client
     .from('monthly_budgets')
-    .select('*')
+    .select(BUDGET_COLUMNS)
+    .eq('user_id', userId)
     .eq('month_start', monthStart)
     .maybeSingle()
 
@@ -74,13 +66,14 @@ export const saveMonthlyBudget = async (
     return saved
   }
 
-  const { data, error } = await requireClient()
+  const client = await getSupabaseClient()
+  const { data, error } = await client
     .from('monthly_budgets')
     .upsert(
       { user_id: userId, month_start: monthStart, amount },
       { onConflict: 'user_id,month_start' },
     )
-    .select()
+    .select(BUDGET_COLUMNS)
     .single()
 
   if (error) throw error

@@ -1,29 +1,34 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchLotteryMonthlyLimit, saveLotteryMonthlyLimit } from '../api/limits'
 import type { LotteryMonthlyLimit } from '../limitTypes'
 
-export const useLotteryLimit = (userId: string, month: string) => {
+export const useLotteryLimit = (userId: string, month: string, enabled = true) => {
   const [limit, setLimit] = useState<LotteryMonthlyLimit | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const refresh = useCallback(async () => {
-    if (!userId) {
-      setLimit(null)
+    const requestId = ++requestIdRef.current
+    if (!userId || !enabled) {
+      if (!userId) setLimit(null)
       setLoading(false)
       return
     }
     setLoading(true)
     setError(null)
     try {
-      setLimit(await fetchLotteryMonthlyLimit(userId, month))
+      const nextLimit = await fetchLotteryMonthlyLimit(userId, month)
+      if (requestId === requestIdRef.current) setLimit(nextLimit)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không tải được hạn mức.')
+      if (requestId === requestIdRef.current) {
+        setError(reason instanceof Error ? reason.message : 'Không tải được hạn mức.')
+      }
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [month, userId])
+  }, [enabled, month, userId])
 
   useEffect(() => {
     void refresh()
@@ -31,6 +36,8 @@ export const useLotteryLimit = (userId: string, month: string) => {
 
   const save = async (amount: number) => {
     if (!userId) throw new Error('Chưa xác định được người dùng.')
+    requestIdRef.current += 1
+    setLoading(false)
     setSaving(true)
     setError(null)
     try {

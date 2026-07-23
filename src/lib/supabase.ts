@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
@@ -10,12 +10,22 @@ export const isSupabaseConfigured = Boolean(
     !supabasePublishableKey.includes('YOUR_KEY'),
 )
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabasePublishableKey!, {
+let clientPromise: Promise<SupabaseClient> | null = null
+
+export const getSupabaseClient = () => {
+  if (!isSupabaseConfigured) {
+    return Promise.reject(new Error('Supabase chưa được cấu hình.'))
+  }
+
+  clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) =>
+    createClient(supabaseUrl!, supabasePublishableKey!, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
-    })
-  : null
+    }),
+  )
+
+  return clientPromise
+}

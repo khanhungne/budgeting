@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createLotteryEntry,
   fetchLotteryEntries,
@@ -21,28 +21,33 @@ export const calculateLotteryStats = (entries: LotteryEntry[]) => {
   }
 }
 
-export const useLotteryEntries = (userId: string, month: string) => {
+export const useLotteryEntries = (userId: string, month: string, enabled = true) => {
   const [entries, setEntries] = useState<LotteryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const refresh = useCallback(async () => {
-    if (!userId) {
-      setEntries([])
+    const requestId = ++requestIdRef.current
+    if (!userId || !enabled) {
+      if (!userId) setEntries([])
       setLoading(false)
       return
     }
     setLoading(true)
     setError(null)
     try {
-      setEntries(await fetchLotteryEntries(month))
+      const rows = await fetchLotteryEntries(userId, month)
+      if (requestId === requestIdRef.current) setEntries(rows)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không tải được sổ lô đề.')
+      if (requestId === requestIdRef.current) {
+        setError(reason instanceof Error ? reason.message : 'Không tải được sổ lô đề.')
+      }
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [month, userId])
+  }, [enabled, month, userId])
 
   useEffect(() => {
     void refresh()
@@ -50,6 +55,8 @@ export const useLotteryEntries = (userId: string, month: string) => {
 
   const save = async (input: LotteryEntryInput, editingId?: string) => {
     if (!userId) throw new Error('Chưa xác định được người dùng.')
+    requestIdRef.current += 1
+    setLoading(false)
     setSaving(true)
     setError(null)
     try {
@@ -82,6 +89,8 @@ export const useLotteryEntries = (userId: string, month: string) => {
   }
 
   const remove = async (id: string) => {
+    requestIdRef.current += 1
+    setLoading(false)
     setSaving(true)
     setError(null)
     try {

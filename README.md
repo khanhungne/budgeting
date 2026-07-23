@@ -63,6 +63,8 @@ duyệt hiện tại.
 - Lọc giao dịch theo khoảng ngày và chuyển thống kê giữa cả tháng/một ngày.
 - Xuất và nhập backup JSON trong chế độ demo.
 - Cài lên màn hình chính dưới dạng PWA.
+- Tải màn hình và dữ liệu theo nhu cầu; số dư ví được tổng hợp tại PostgreSQL khi
+  dùng Supabase.
 
 Phần lô đề chỉ dùng để ghi chép và kiểm soát tiền, không dự đoán kết quả, soi cầu
 hoặc kết nối dịch vụ đặt cược.

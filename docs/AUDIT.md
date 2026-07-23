@@ -22,6 +22,18 @@
 - Thêm hạn mức tiền vào lô đề theo tháng và bộ lọc miền/đài.
 - Bổ sung 8 unit test cho định dạng VND, biên tháng, danh sách đài, thống kê lô
   đề và tổng hợp nhiều tháng.
+- Chỉ tải code Supabase khi thực sự cấu hình cloud; bản demo không còn phải parse
+  SDK Supabase lúc khởi động.
+- Lazy-load bốn màn hình phụ và chỉ gọi API lô đề, hạn mức, ngân sách, xu hướng
+  hoặc số dư ví khi tab tương ứng được mở.
+- Xu hướng nhiều tháng tái sử dụng giao dịch của tháng hiện tại, không tải trùng.
+- View `wallet_balances` tổng hợp số dư trong PostgreSQL; frontend không còn phải
+  tải toàn bộ lịch sử giao dịch chỉ để tính số dư.
+- Thêm index cho quan hệ ví–giao dịch, ràng buộc ví và giao dịch cùng chủ sở hữu,
+  giới hạn số VND theo `Number.isSafeInteger` và kiểm tra định dạng số lô ở DB.
+- Chặn response cũ ghi đè dữ liệu mới khi đổi tháng hoặc thao tác lưu quá nhanh.
+- Chỉ chọn các cột cần dùng trong Data API và loại bỏ màn hình cấu hình không còn
+  được tham chiếu.
 
 ## Giới hạn còn lại
 
@@ -29,5 +41,7 @@
   dùng xoá dữ liệu trình duyệt.
 - Chưa có cơ chế tự chuyển dữ liệu local sang Supabase.
 - Chế độ Supabase cần chạy schema mới nhất trước khi sử dụng các module mới.
+- Chưa có dữ liệu production để chạy `EXPLAIN ANALYZE`; sau khi có lượng dữ liệu
+  thực nên xem Query Performance Advisor trước khi thêm index mới.
 - Đã smoke-test bố cục ở viewport mobile 390 px; vẫn cần kiểm thử end-to-end trên
   nhiều trình duyệt và thiết bị thật trước khi phát hành rộng.

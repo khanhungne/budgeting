@@ -7,7 +7,7 @@ import {
   type PropsWithChildren,
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
-import { isSupabaseConfigured, supabase } from '../../lib/supabase'
+import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase'
 
 type AuthContextValue = {
   user: User | null
@@ -30,30 +30,40 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [recoveryMode, setRecoveryMode] = useState(false)
 
   useEffect(() => {
-    if (!supabase) {
+    if (!isSupabaseConfigured) {
       setLoading(false)
       return
     }
 
     let mounted = true
-    void supabase.auth.getSession().then(({ data }) => {
-      if (mounted) {
-        setSession(data.session)
-        setLoading(false)
-      }
-    })
+    let unsubscribe: (() => void) | undefined
+    void getSupabaseClient()
+      .then(async (client) => {
+        if (!mounted) return
+        const {
+          data: { subscription },
+        } = client.auth.onAuthStateChange((event, nextSession) => {
+          if (!mounted) return
+          setSession(nextSession)
+          setLoading(false)
+          if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
+        })
+        unsubscribe = () => subscription.unsubscribe()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      setSession(nextSession)
-      setLoading(false)
-      if (event === 'PASSWORD_RECOVERY') setRecoveryMode(true)
-    })
+        const { data, error } = await client.auth.getSession()
+        if (error) throw error
+        if (mounted) {
+          setSession(data.session)
+          setLoading(false)
+        }
+      })
+      .catch(() => {
+        if (mounted) setLoading(false)
+      })
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      unsubscribe?.()
     }
   }, [])
 
@@ -64,13 +74,13 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       loading,
       recoveryMode,
       signIn: async (email, password) => {
-        if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const client = await getSupabaseClient()
+        const { error } = await client.auth.signInWithPassword({ email, password })
         if (error) throw error
       },
       signUp: async (email, password) => {
-        if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-        const { data, error } = await supabase.auth.signUp({
+        const client = await getSupabaseClient()
+        const { data, error } = await client.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
@@ -79,22 +89,23 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         return data.session === null
       },
       resetPassword: async (email) => {
-        if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const client = await getSupabaseClient()
+        const { error } = await client.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin,
         })
         if (error) throw error
       },
       updatePassword: async (password) => {
-        if (!supabase) throw new Error('Supabase chưa được cấu hình.')
-        const { error } = await supabase.auth.updateUser({ password })
+        const client = await getSupabaseClient()
+        const { error } = await client.auth.updateUser({ password })
         if (error) throw error
         setRecoveryMode(false)
       },
       clearRecovery: () => setRecoveryMode(false),
       signOut: async () => {
-        if (!supabase) return
-        const { error } = await supabase.auth.signOut()
+        if (!isSupabaseConfigured) return
+        const client = await getSupabaseClient()
+        const { error } = await client.auth.signOut()
         if (error) throw error
       },
     }),

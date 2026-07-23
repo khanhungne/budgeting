@@ -20,8 +20,8 @@
 - Giao dịch đã được gắn ví; dữ liệu demo cũ tự chuyển về ví Tiền mặt.
 - Thêm xu hướng thu–chi 3/6/12 tháng, kể cả tháng không phát sinh giao dịch.
 - Thêm hạn mức tiền vào lô đề theo tháng và bộ lọc miền/đài.
-- Bổ sung 8 unit test cho định dạng VND, biên tháng, danh sách đài, thống kê lô
-  đề và tổng hợp nhiều tháng.
+- Bổ sung 11 unit test cho định dạng VND, localStorage, biên tháng, danh sách
+  đài, thống kê lô đề và tổng hợp nhiều tháng.
 - Chỉ tải code Supabase khi thực sự cấu hình cloud; bản demo không còn phải parse
   SDK Supabase lúc khởi động.
 - Lazy-load bốn màn hình phụ và chỉ gọi API lô đề, hạn mức, ngân sách, xu hướng

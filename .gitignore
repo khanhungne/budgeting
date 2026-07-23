@@ -6,6 +6,7 @@ dist
 *.local
 *.log
 .tmp-chrome*/
+mobile-*.png
 .DS_Store
 .idea
 .vscode/*

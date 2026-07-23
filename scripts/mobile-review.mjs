@@ -71,6 +71,7 @@ await pause(1200)
 
 const tabs = [
   ['home', 'Tổng quan'],
+  ['transactions', 'Giao dịch'],
   ['lottery', 'Lô đề'],
   ['statistics', 'Thống kê'],
   ['account', 'Tài khoản'],

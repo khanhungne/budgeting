@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { AppShell, type AppTab } from '../components/layout/AppShell'
 import { PwaUpdateToast } from '../components/pwa/PwaUpdateToast'
 import { LoadingScreen } from '../components/ui/LoadingScreen'
@@ -15,6 +15,7 @@ import {
   type TrendMonths,
 } from '../features/transactions/hooks/useTransactionTrends'
 import type { Transaction } from '../features/transactions/types'
+import { calculateTotalWalletBalance } from '../features/wallets/balance'
 import { useWallets } from '../features/wallets/hooks/useWallets'
 import { currentMonth } from '../lib/dates'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -53,7 +54,10 @@ export const App = () => {
   const demoMode = !isSupabaseConfigured
   const activeUser = demoMode ? DEMO_USER : user
   const transactionState = useTransactions(activeUser?.id ?? '', month)
-  const walletState = useWallets(activeUser?.id ?? '', activeTab === 'account')
+  const walletState = useWallets(
+    activeUser?.id ?? '',
+    activeTab === 'home' || activeTab === 'account',
+  )
   const budgetState = useBudget(activeUser?.id ?? '', month, activeTab === 'home')
   const lotteryState = useLotteryEntries(
     activeUser?.id ?? '',
@@ -71,6 +75,10 @@ export const App = () => {
     trendMonths,
     transactionState.transactions,
     activeTab === 'statistics',
+  )
+  const totalWalletBalance = useMemo(
+    () => calculateTotalWalletBalance(walletState.wallets, walletState.balances),
+    [walletState.balances, walletState.wallets],
   )
 
   if (!demoMode && authLoading) return <LoadingScreen />
@@ -92,6 +100,9 @@ export const App = () => {
     if (window.confirm(`Xoá “${label}”? Thao tác này không thể hoàn tác.`)) {
       try {
         await transactionState.remove(transaction.id)
+        if (activeTab === 'home' || activeTab === 'account') {
+          await walletState.refreshBalances()
+        }
       } catch {
         // Hook đã đưa lỗi lên giao diện.
       }
@@ -118,6 +129,8 @@ export const App = () => {
             wallets={walletState.wallets}
             loading={transactionState.loading}
             totals={transactionState.totals}
+            totalWalletBalance={totalWalletBalance}
+            walletBalanceLoading={walletState.loading}
             budget={budgetState.budget}
             budgetLoading={budgetState.loading}
             budgetSaving={budgetState.saving}
@@ -205,7 +218,9 @@ export const App = () => {
         onClose={() => setFormOpen(false)}
         onSave={async (input, editingId) => {
           await transactionState.save(input, editingId)
-          if (activeTab === 'account') await walletState.refreshBalances()
+          if (activeTab === 'home' || activeTab === 'account') {
+            await walletState.refreshBalances()
+          }
           if (activeTab === 'statistics') await trendState.refresh()
         }}
       />

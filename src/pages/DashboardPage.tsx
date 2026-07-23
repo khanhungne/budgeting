@@ -16,6 +16,8 @@ type DashboardPageProps = {
   wallets: Wallet[]
   loading: boolean
   totals: { income: number; expense: number; balance: number }
+  totalWalletBalance: number
+  walletBalanceLoading: boolean
   budget: MonthlyBudget | null
   budgetLoading: boolean
   budgetSaving: boolean
@@ -35,6 +37,8 @@ export const DashboardPage = ({
   wallets,
   loading,
   totals,
+  totalWalletBalance,
+  walletBalanceLoading,
   budget,
   budgetLoading,
   budgetSaving,
@@ -76,7 +80,11 @@ export const DashboardPage = ({
 
       <SummaryCard
         month={month}
-        {...totals}
+        income={totals.income}
+        expense={totals.expense}
+        monthlyBalance={totals.balance}
+        totalBalance={totalWalletBalance}
+        balanceLoading={walletBalanceLoading}
         onMonthChange={onMonthChange}
       />
 

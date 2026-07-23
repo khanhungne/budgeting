@@ -50,7 +50,7 @@ duyệt hiện tại.
 
 - Thêm, sửa và xoá khoản thu/chi theo VND.
 - Quản lý nhiều ví/tài khoản và tự tính số dư từng ví.
-- Tổng hợp thu, chi và số dư theo tháng.
+- Hiển thị tổng số dư hiện tại và biến động thu–chi theo tháng.
 - Đặt ngân sách tháng và theo dõi mức đã sử dụng.
 - Tìm kiếm theo ghi chú/danh mục và lọc thu/chi.
 - Phân bổ khoản chi theo danh mục.
@@ -68,6 +68,87 @@ duyệt hiện tại.
 
 Phần lô đề chỉ dùng để ghi chép và kiểm soát tiền, không dự đoán kết quả, soi cầu
 hoặc kết nối dịch vụ đặt cược.
+
+## Luồng sử dụng và cách tính số dư
+
+### 1. Đăng ký hoặc đăng nhập
+
+Khi dùng Supabase, mỗi tài khoản chỉ đọc và thay đổi dữ liệu của chính mình nhờ
+Row Level Security (RLS). Sau lần đăng nhập đầu tiên, ứng dụng tự tạo một ví tiền
+mặt mặc định nếu tài khoản chưa có ví.
+
+### 2. Khai báo ví và số dư ban đầu
+
+Vào **Tài khoản → Ví và tài khoản** để sửa ví mặc định hoặc tạo thêm ví ngân
+hàng, tiền mặt và ví điện tử.
+
+**Số dư ban đầu** là số tiền thực tế đang có trong ví tại thời điểm bắt đầu dùng
+ứng dụng. Không nhập lại khoản này thành một giao dịch thu, nếu không số tiền sẽ
+bị cộng hai lần.
+
+### 3. Ghi nhận giao dịch
+
+Khi thêm một giao dịch, chọn:
+
+- **Tiền vào** khi nhận lương, được hoàn tiền hoặc có khoản thu khác.
+- **Tiền ra** khi mua sắm, thanh toán hoá đơn hoặc có khoản chi khác.
+- Ví nhận tiền hoặc chi tiền tương ứng.
+- Ngày, danh mục và ghi chú của giao dịch.
+
+Thêm, sửa hoặc xoá giao dịch sẽ cập nhật lại số dư của ví và tổng số dư trên
+trang chủ.
+
+### 4. Hiểu các con số trên trang chủ
+
+**Tổng số dư hiện tại** sử dụng toàn bộ lịch sử giao dịch của các ví đang hoạt
+động:
+
+```text
+Tổng số dư hiện tại
+= tổng số dư ban đầu của các ví
++ toàn bộ tiền vào
+− toàn bộ tiền ra
+```
+
+Ví đã lưu trữ vẫn giữ dữ liệu nhưng không được cộng vào tổng số dư trang chủ.
+Khôi phục ví để đưa số dư của ví đó trở lại tổng.
+
+**Biến động tháng**, **Tiền vào** và **Tiền ra** chỉ tính các giao dịch thuộc
+tháng đang chọn:
+
+```text
+Biến động tháng = Tiền vào trong tháng − Tiền ra trong tháng
+```
+
+Ví dụ: ví có số dư ban đầu `5.000.000 ₫`, sau đó nhận `10.000.000 ₫` và chi
+`2.000.000 ₫`. Trang chủ hiển thị tổng số dư hiện tại `13.000.000 ₫`; biến động
+tháng là `8.000.000 ₫`.
+
+Ngân sách tháng chỉ so sánh hạn mức với **Tiền ra** trong tháng. Màn hình Thống
+kê cũng phân tích giao dịch theo tháng hoặc khoảng thời gian được chọn.
+
+### 5. Luồng dữ liệu Supabase
+
+```text
+Localhost hoặc Cloudflare Pages
+        ↓
+Supabase Auth xác định tài khoản
+        ↓
+RLS giới hạn dữ liệu theo tài khoản
+        ↓
+PostgreSQL lưu ví, giao dịch, ngân sách và sổ ghi chép
+        ↓
+View wallet_balances tính số dư từng ví
+        ↓
+Ứng dụng cộng các ví đang hoạt động và hiển thị trên trang chủ
+```
+
+Localhost và bản Cloudflare Pages cùng dùng một Supabase project nếu được cấu
+hình cùng URL/key. Vì vậy thay đổi ở local cũng xuất hiện trên production.
+
+PWA có thể mở giao diện đã được cache khi mất mạng, nhưng chế độ Supabase hiện
+cần Internet để tải hoặc lưu thay đổi. Ứng dụng chưa có hàng đợi ghi offline để
+tự đồng bộ lại khi có mạng.
 
 ## Chuyển sang Supabase sau
 

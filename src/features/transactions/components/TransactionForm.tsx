@@ -103,10 +103,6 @@ export const TransactionForm = ({
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    if (walletBalancesLoading) {
-      setError('Đang tải số dư ví. Hãy thử lại sau giây lát.')
-      return
-    }
     const amount = parseVndInput(amountText)
     if (!form.wallet_id) {
       setError('Hãy chọn ví nhận hoặc chi tiền.')
@@ -365,7 +361,7 @@ export const TransactionForm = ({
 
           {error && <Alert>{error}</Alert>}
 
-          <Button type="submit" fullWidth disabled={saving || walletBalancesLoading}>
+          <Button type="submit" fullWidth disabled={saving}>
             {saving && <LoaderCircle className="size-4 animate-spin" />}
             {editing ? 'Lưu thay đổi' : 'Thêm giao dịch'}
           </Button>

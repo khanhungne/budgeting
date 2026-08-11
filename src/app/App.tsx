@@ -12,7 +12,6 @@ import { useLotteryLimit } from '../features/lottery/hooks/useLotteryLimit'
 import { useDebts } from '../features/debts/hooks/useDebts'
 import { TransactionForm } from '../features/transactions/components/TransactionForm'
 import { fetchTransactionReceipt } from '../features/transactions/api/transactions'
-import { findInsufficientWallet } from '../features/transactions/balance'
 import { useTransactions } from '../features/transactions/hooks/useTransactions'
 import { useCategories } from '../features/transactions/hooks/useCategories'
 import {
@@ -23,7 +22,6 @@ import type { Transaction } from '../features/transactions/types'
 import { calculateTotalWalletBalance } from '../features/wallets/balance'
 import { useWallets } from '../features/wallets/hooks/useWallets'
 import { currentMonth } from '../lib/dates'
-import { formatCurrency } from '../lib/format'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { DashboardPage } from '../pages/DashboardPage'
 
@@ -121,26 +119,6 @@ export const App = () => {
 
   const confirmDelete = async (transaction: Transaction) => {
     const label = transaction.note || 'giao dịch này'
-    if (walletState.loading) {
-      window.alert('Đang tải số dư ví. Hãy thử lại sau giây lát.')
-      return
-    }
-    const insufficient = findInsufficientWallet(
-      walletState.balances,
-      null,
-      transaction,
-    )
-    if (insufficient) {
-      const wallet = walletState.wallets.find(
-        (item) => item.id === insufficient.walletId,
-      )
-      window.alert(
-        `Không thể xoá khoản thu vì ví “${wallet?.name ?? 'đã chọn'}” sẽ âm ${formatCurrency(
-          Math.abs(insufficient.projectedBalance),
-        )}.`,
-      )
-      return
-    }
     if (window.confirm(`Xoá “${label}”? Thao tác này không thể hoàn tác.`)) {
       try {
         await transactionState.remove(transaction.id)
@@ -295,21 +273,6 @@ export const App = () => {
         onClose={() => setFormOpen(false)}
         onAddCategory={categoryState.add}
         onSave={async (input, editingId) => {
-          const insufficient = findInsufficientWallet(
-            walletState.balances,
-            input,
-            editing,
-          )
-          if (insufficient) {
-            const wallet = walletState.wallets.find(
-              (item) => item.id === insufficient.walletId,
-            )
-            throw new Error(
-              `Số dư ví “${wallet?.name ?? 'đã chọn'}” không đủ. Thiếu ${formatCurrency(
-                Math.abs(insufficient.projectedBalance),
-              )}.`,
-            )
-          }
           await transactionState.save(input, editingId)
           await walletState.refreshBalances()
           if (activeTab === 'statistics') await trendState.refresh()

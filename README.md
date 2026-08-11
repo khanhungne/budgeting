@@ -172,14 +172,14 @@ Sau khi lưu:
 - Số dư của ví được tính lại.
 - Tổng số dư trên trang chủ được cập nhật.
 - Thu, chi, ngân sách và thống kê của tháng liên quan thay đổi theo giao dịch.
-- Khoản chi làm ví âm sẽ bị từ chối với thông báo **Số dư ví không đủ**.
+- Khoản chi vẫn được lưu khi số dư ví không đủ; số dư ví có thể hiển thị số âm.
 
 #### Sửa hoặc xoá
 
 - Chọn một giao dịch trong danh sách để sửa các thông tin đã nhập.
 - Chọn nút xoá và xác nhận để xoá vĩnh viễn giao dịch.
 - Sau khi sửa/xoá, số dư ví và các số liệu liên quan được tính lại.
-- Không thể sửa hoặc xoá một khoản thu nếu thao tác đó làm ví bị âm.
+- Có thể sửa hoặc xoá giao dịch; số dư ví được tính lại và có thể trở thành số âm.
 
 ### Flow 4 — Trang Tổng quan
 

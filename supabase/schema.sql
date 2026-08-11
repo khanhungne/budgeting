@@ -348,75 +348,10 @@ left join public.transactions as tx
   and tx.user_id = wallet.user_id
 group by wallet.id, wallet.user_id;
 
--- Không cho thao tác mới làm số dư ví âm hơn. Dữ liệu âm từ phiên bản cũ vẫn
--- có thể được sửa bằng cách thêm khoản thu hoặc xoá khoản chi.
-create or replace function public.enforce_nonnegative_wallet_balance()
-returns trigger
-language plpgsql
-security invoker
-set search_path = ''
-as $$
-declare
-  affected_wallet_id uuid;
-  current_balance numeric(16, 0);
-  previous_balance numeric(16, 0);
-  old_effect numeric(16, 0);
-  new_effect numeric(16, 0);
-begin
-  for affected_wallet_id in
-    select distinct wallet_id
-    from (
-      values
-        (case when tg_op <> 'DELETE' then new.wallet_id else null end),
-        (case when tg_op <> 'INSERT' then old.wallet_id else null end)
-    ) as affected(wallet_id)
-    where wallet_id is not null
-  loop
-    perform 1
-    from public.wallets
-    where id = affected_wallet_id
-    for update;
-
-    select coalesce(
-      sum(case when kind = 'income' then amount else -amount end),
-      0
-    )
-    into current_balance
-    from public.transactions
-    where wallet_id = affected_wallet_id;
-
-    old_effect := 0;
-    if tg_op <> 'INSERT' and old.wallet_id = affected_wallet_id then
-      old_effect := case when old.kind = 'income' then old.amount else -old.amount end;
-    end if;
-
-    new_effect := 0;
-    if tg_op <> 'DELETE' and new.wallet_id = affected_wallet_id then
-      new_effect := case when new.kind = 'income' then new.amount else -new.amount end;
-    end if;
-
-    previous_balance := current_balance - new_effect + old_effect;
-
-    if current_balance < 0 and current_balance < previous_balance then
-      raise exception 'Số dư ví không đủ cho thao tác này.'
-        using errcode = '23514';
-    end if;
-  end loop;
-
-  return null;
-end;
-$$;
-
-revoke all on function public.enforce_nonnegative_wallet_balance()
-  from public, anon, authenticated;
-
+-- Flow hiện tại cho phép ví/ngân hàng có số dư âm.
 drop trigger if exists transactions_nonnegative_wallet_balance
   on public.transactions;
-create constraint trigger transactions_nonnegative_wallet_balance
-  after insert or update or delete on public.transactions
-  deferrable initially immediate
-  for each row
-  execute function public.enforce_nonnegative_wallet_balance();
+drop function if exists public.enforce_nonnegative_wallet_balance();
 
 -- Chỉ tài khoản đã đăng nhập mới được gọi CRUD; RLS tiếp tục giới hạn từng dòng.
 revoke all on table public.transactions from public, anon;

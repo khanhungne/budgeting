@@ -39,11 +39,12 @@ Nếu không chạy lại toàn bộ `supabase/schema.sql`, hãy chạy lần l�
 SQL Editor, mỗi file phải báo thành công trước khi sang file tiếp theo:
 
 1. `20260724_transaction_only_balances.sql`
-2. `20260811_categories_receipts_debts.sql`
-3. `20260811_debt_flow.sql`
-4. `20260811_lazy_receipts.sql`
-5. `20260811_lottery_schedule_vip_hits.sql`
-6. `20260811_shared_category_relations.sql`
+2. `20260811_allow_negative_wallet_balances.sql`
+3. `20260811_categories_receipts_debts.sql`
+4. `20260811_debt_flow.sql`
+5. `20260811_lazy_receipts.sql`
+6. `20260811_lottery_schedule_vip_hits.sql`
+7. `20260811_shared_category_relations.sql`
 
 Các migration có thể chạy lại an toàn và file cuối cùng yêu cầu giao dịch cùng ngân sách
 tham chiếu đến dữ liệu `categories` dùng chung. Không chạy nhiều file đồng thời ở các cửa
@@ -59,7 +60,7 @@ Migration này:
 2. Đưa `opening_balance` của ví về `0`.
 3. Bắt buộc mọi giao dịch thuộc một ví.
 4. Tính số dư chỉ từ giao dịch thu/chi.
-5. Ngăn thao tác mới làm số dư ví âm hơn.
+5. Cho phép số dư ví âm để giữ flow ghi nhận giao dịch cũ.
 
 Migration chạy trong một transaction; nếu có lỗi, toàn bộ thay đổi được rollback.
 Không chạy cả file migration và schema đồng thời trong hai cửa sổ SQL Editor.

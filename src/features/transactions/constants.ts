@@ -15,8 +15,31 @@ export const CATEGORIES: Category[] = [
   { id: 'other-income', label: 'Thu khác', emoji: '💰', kind: 'income', color: '#72a96b' },
 ]
 
-export const getCategory = (id: string) =>
-  CATEGORIES.find((category) => category.id === id) ?? {
+const decodeCustomCategory = (id: string): Category | null => {
+  if (!id.startsWith('custom:')) return null
+  const [, kind, emoji, encodedLabel] = id.split(':')
+  if ((kind !== 'expense' && kind !== 'income') || !encodedLabel) return null
+  try {
+    return {
+      id,
+      kind,
+      emoji: emoji || '📌',
+      label: encodedLabel,
+      color: kind === 'expense' ? '#d97706' : '#059669',
+    }
+  } catch {
+    return null
+  }
+}
+
+export const createCustomCategoryId = (
+  kind: Category['kind'],
+  label: string,
+  emoji = '📌',
+) => `custom:${kind}:${emoji}:${label.trim().replaceAll(':', '-')}`.slice(0, 40)
+
+export const getCategory = (id: string, categories: Category[] = CATEGORIES) =>
+  categories.find((category) => category.id === id) ?? CATEGORIES.find((category) => category.id === id) ?? decodeCustomCategory(id) ?? {
     id,
     label: 'Khác',
     emoji: '📦',

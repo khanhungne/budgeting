@@ -38,7 +38,7 @@ export const SummaryCard = ({
         {balanceLoading ? 'Đang tính…' : formatCurrency(totalBalance)}
       </p>
       <p className="mt-1 text-[11px] font-medium text-emerald-100/55">
-        Số dư ban đầu + toàn bộ tiền vào − toàn bộ tiền ra
+        Số dư tháng trước + khoản thu − khoản chi
       </p>
     </div>
 

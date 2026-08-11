@@ -1,10 +1,12 @@
 import { ArrowRight, WifiOff } from 'lucide-react'
 import { BudgetCard } from '../features/budgets/components/BudgetCard'
+import { CategoryBudgetCard } from '../features/budgets/components/CategoryBudgetCard'
+import type { CategoryBudget } from '../features/budgets/categoryTypes'
 import type { MonthlyBudget } from '../features/budgets/types'
 import { CategoryBreakdown } from '../features/transactions/components/CategoryBreakdown'
 import { SummaryCard } from '../features/transactions/components/SummaryCard'
 import { TransactionList } from '../features/transactions/components/TransactionList'
-import type { Transaction } from '../features/transactions/types'
+import type { Category, Transaction } from '../features/transactions/types'
 import type { Wallet } from '../features/wallets/types'
 import { getInitials } from '../lib/format'
 
@@ -24,9 +26,17 @@ type DashboardPageProps = {
   error: string | null
   onMonthChange: (month: string) => void
   onBudgetSave: (amount: number) => Promise<void>
+  categoryBudgets: CategoryBudget[]
+  categoryBudgetsLoading: boolean
+  categoryBudgetsSaving: boolean
+  categoryBudgetsError: string | null
+  onCategoryBudgetSave: (category: string, amount: number) => Promise<void>
+  onCategoryBudgetRemove: (id: string) => Promise<void>
+  customCategories: Category[]
   onViewAll: () => void
   onEdit: (transaction: Transaction) => void
   onDelete: (transaction: Transaction) => void
+  onViewReceipt: (transaction: Transaction) => Promise<string | null>
 }
 
 export const DashboardPage = ({
@@ -45,9 +55,17 @@ export const DashboardPage = ({
   error,
   onMonthChange,
   onBudgetSave,
+  categoryBudgets,
+  categoryBudgetsLoading,
+  categoryBudgetsSaving,
+  categoryBudgetsError,
+  onCategoryBudgetSave,
+  onCategoryBudgetRemove,
+  customCategories,
   onViewAll,
   onEdit,
   onDelete,
+  onViewReceipt,
 }: DashboardPageProps) => {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
@@ -96,6 +114,17 @@ export const DashboardPage = ({
         onSave={onBudgetSave}
       />
 
+      <CategoryBudgetCard
+        budgets={categoryBudgets}
+        transactions={transactions}
+        loading={categoryBudgetsLoading}
+        saving={categoryBudgetsSaving}
+        error={categoryBudgetsError}
+        onSave={onCategoryBudgetSave}
+        onRemove={(id) => onCategoryBudgetRemove(id).catch(() => undefined)}
+        customCategories={customCategories}
+      />
+
       <section className="mt-7 rounded-[1.75rem] bg-white p-5 shadow-[0_8px_30px_rgba(23,48,40,0.05)]">
         <div className="mb-5 flex items-center justify-between">
           <div>
@@ -105,7 +134,7 @@ export const DashboardPage = ({
             <h2 className="mt-1 text-lg font-black text-slate-900">Chi theo danh mục</h2>
           </div>
         </div>
-        <CategoryBreakdown transactions={transactions} />
+        <CategoryBreakdown transactions={transactions} categories={customCategories} />
       </section>
 
       <section className="mt-7">
@@ -131,6 +160,8 @@ export const DashboardPage = ({
           limit={5}
           onEdit={onEdit}
           onDelete={onDelete}
+          onViewReceipt={onViewReceipt}
+          categories={customCategories}
         />
       </section>
     </div>

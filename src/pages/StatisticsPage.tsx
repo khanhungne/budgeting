@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { CategoryBreakdown } from '../features/transactions/components/CategoryBreakdown'
 import { getCategory } from '../features/transactions/constants'
-import type { Transaction } from '../features/transactions/types'
+import type { Category, Transaction } from '../features/transactions/types'
 import { formatMonth } from '../lib/dates'
 import { formatCompactCurrency, formatCurrency, formatDate } from '../lib/format'
 import type {
@@ -27,6 +27,7 @@ type StatisticsPageProps = {
   trendMonths: TrendMonths
   onTrendMonthsChange: (months: TrendMonths) => void
   onMonthChange: (month: string) => void
+  categories: Category[]
 }
 
 export const StatisticsPage = ({
@@ -39,6 +40,7 @@ export const StatisticsPage = ({
   trendMonths,
   onTrendMonthsChange,
   onMonthChange,
+  categories,
 }: StatisticsPageProps) => {
   const [selectedDate, setSelectedDate] = useState('')
 
@@ -298,7 +300,7 @@ export const StatisticsPage = ({
             <h2 className="font-black text-slate-900">Chi theo danh mục</h2>
           </div>
         </div>
-        <CategoryBreakdown transactions={scopedTransactions} />
+        <CategoryBreakdown transactions={scopedTransactions} categories={categories} />
       </section>
 
       <section className="mt-5 rounded-[1.75rem] bg-white p-5 shadow-[0_8px_30px_rgba(23,48,40,0.05)]">
@@ -340,7 +342,7 @@ export const StatisticsPage = ({
             <div className="min-w-0 flex-1">
               <p className="text-xs text-slate-400">Khoản chi lớn nhất</p>
               <p className="truncate font-black text-slate-900">
-                {insights.largest.note || getCategory(insights.largest.category).label}
+                {insights.largest.note || getCategory(insights.largest.category, categories).label}
               </p>
             </div>
             <p className="text-sm font-black text-red-600">

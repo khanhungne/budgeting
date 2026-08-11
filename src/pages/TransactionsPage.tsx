@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { formatMonth } from '../lib/dates'
-import { CATEGORIES, getCategory } from '../features/transactions/constants'
+import { getCategory } from '../features/transactions/constants'
 import { TransactionList } from '../features/transactions/components/TransactionList'
-import type { Transaction, TransactionKind } from '../features/transactions/types'
+import type { Category, Transaction, TransactionKind } from '../features/transactions/types'
 import type { Wallet } from '../features/wallets/types'
 
 type TransactionsPageProps = {
@@ -14,6 +14,8 @@ type TransactionsPageProps = {
   onMonthChange: (month: string) => void
   onEdit: (transaction: Transaction) => void
   onDelete: (transaction: Transaction) => void
+  onViewReceipt: (transaction: Transaction) => Promise<string | null>
+  categories: Category[]
 }
 
 type KindFilter = 'all' | TransactionKind
@@ -26,6 +28,8 @@ export const TransactionsPage = ({
   onMonthChange,
   onEdit,
   onDelete,
+  onViewReceipt,
+  categories,
 }: TransactionsPageProps) => {
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<KindFilter>('all')
@@ -49,14 +53,14 @@ export const TransactionsPage = ({
   }, [month])
 
   const categoryOptions = useMemo(
-    () => CATEGORIES.filter((item) => kind === 'all' || item.kind === kind),
-    [kind],
+    () => categories.filter((item) => kind === 'all' || item.kind === kind),
+    [categories, kind],
   )
 
   const filteredTransactions = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('vi')
     return transactions.filter((transaction) => {
-      const categoryInfo = getCategory(transaction.category)
+      const categoryInfo = getCategory(transaction.category, categories)
       const matchesQuery =
         !normalizedQuery ||
         transaction.note?.toLocaleLowerCase('vi').includes(normalizedQuery) ||
@@ -67,7 +71,7 @@ export const TransactionsPage = ({
       const matchesTo = !dateTo || transaction.occurred_on <= dateTo
       return matchesQuery && matchesKind && matchesCategory && matchesFrom && matchesTo
     })
-  }, [category, dateFrom, dateTo, kind, query, transactions])
+  }, [categories, category, dateFrom, dateTo, kind, query, transactions])
 
   const hasFilters =
     query.trim() || kind !== 'all' || category !== 'all' || dateFrom || dateTo
@@ -224,6 +228,8 @@ export const TransactionsPage = ({
         }
         onEdit={onEdit}
         onDelete={onDelete}
+        onViewReceipt={onViewReceipt}
+        categories={categories}
       />
     </div>
   )

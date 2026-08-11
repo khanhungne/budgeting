@@ -2,17 +2,22 @@ import { getMonthBounds } from '../../../lib/dates'
 import { readLocalArray, writeLocalArray } from '../../../lib/localStorage'
 import { getSupabaseClient, isSupabaseConfigured } from '../../../lib/supabase'
 import type { LotteryEntry, LotteryEntryInput } from '../types'
+import { getLotteryDrawTime, marketToRegion } from '../lottery-schedule'
 
 export const DEMO_LOTTERY_STORAGE_KEY = 'vi-nho.demo.lottery.v1'
 const LOTTERY_COLUMNS =
-  'id,user_id,play_type,region,station,numbers,stake,payout,status,draw_date,note,created_at,updated_at'
+  'id,user_id,play_type,region,market,station,numbers,hit_numbers,stake,payout,status,draw_date,draw_time,note,result_updated_at,created_at,updated_at'
 
 const readDemoEntries = (): LotteryEntry[] => {
   return (readLocalArray<LotteryEntry>(DEMO_LOTTERY_STORAGE_KEY) ?? []).map(
     (entry) => ({
       ...entry,
+      market: entry.market ?? entry.region ?? 'north',
       region: entry.region ?? 'north',
       station: entry.station?.trim() || 'Hà Nội',
+      hit_numbers: entry.hit_numbers ?? [],
+      draw_time: entry.draw_time ?? getLotteryDrawTime(entry.market ?? entry.region ?? 'north'),
+      result_updated_at: entry.result_updated_at ?? null,
     }),
   )
 }
@@ -51,8 +56,10 @@ export const fetchLotteryEntries = async (userId: string, month: string) => {
 export const createLotteryEntry = async (userId: string, input: LotteryEntryInput) => {
   const normalized = {
     ...input,
+    region: marketToRegion(input.market),
     station: input.station.trim(),
     note: input.note.trim() || null,
+    result_updated_at: input.status === 'pending' ? null : new Date().toISOString(),
   }
 
   if (!isSupabaseConfigured) {
@@ -82,8 +89,10 @@ export const createLotteryEntry = async (userId: string, input: LotteryEntryInpu
 export const updateLotteryEntry = async (id: string, input: LotteryEntryInput) => {
   const normalized = {
     ...input,
+    region: marketToRegion(input.market),
     station: input.station.trim(),
     note: input.note.trim() || null,
+    result_updated_at: input.status === 'pending' ? null : new Date().toISOString(),
   }
 
   if (!isSupabaseConfigured) {

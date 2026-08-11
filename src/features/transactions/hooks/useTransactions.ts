@@ -7,7 +7,7 @@ import {
 } from '../api/transactions'
 import type { Transaction, TransactionInput } from '../types'
 
-export const useTransactions = (userId: string, month: string) => {
+export const useTransactions = (userId: string, month: string, enabled = true) => {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -16,7 +16,7 @@ export const useTransactions = (userId: string, month: string) => {
 
   const refresh = useCallback(async () => {
     const requestId = ++requestIdRef.current
-    if (!userId) {
+    if (!userId || !enabled) {
       setTransactions([])
       setLoading(false)
       return
@@ -33,7 +33,7 @@ export const useTransactions = (userId: string, month: string) => {
     } finally {
       if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [month, userId])
+  }, [enabled, month, userId])
 
   useEffect(() => {
     void refresh()

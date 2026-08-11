@@ -6,12 +6,14 @@ import { Alert } from '../../../components/ui/Alert'
 import { useAuth } from '../AuthProvider'
 
 type Mode = 'sign-in' | 'sign-up'
+const REMEMBERED_EMAIL_KEY = 'vi-nho.auth.remembered-email'
 
 export const AuthScreen = () => {
   const { signIn, signUp, resetPassword } = useAuth()
   const [mode, setMode] = useState<Mode>('sign-in')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '')
   const [password, setPassword] = useState('')
+  const [rememberEmail, setRememberEmail] = useState(() => Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY)))
   const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<{ tone: 'error' | 'success'; text: string } | null>(null)
@@ -28,6 +30,8 @@ export const AuthScreen = () => {
     try {
       if (mode === 'sign-in') {
         await signIn(email.trim(), password)
+        if (rememberEmail) localStorage.setItem(REMEMBERED_EMAIL_KEY, email.trim())
+        else localStorage.removeItem(REMEMBERED_EMAIL_KEY)
       } else {
         const needsConfirmation = await signUp(email.trim(), password)
         if (needsConfirmation) {
@@ -157,6 +161,18 @@ export const AuthScreen = () => {
                 </button>
               </span>
             </label>
+
+            {mode === 'sign-in' && (
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                <input
+                  type="checkbox"
+                  checked={rememberEmail}
+                  onChange={(event) => setRememberEmail(event.target.checked)}
+                  className="size-4 accent-emerald-700"
+                />
+                Ghi nhớ tài khoản trên thiết bị này
+              </label>
+            )}
 
             {message && (
               <Alert tone={message.tone} onClose={() => setMessage(null)}>

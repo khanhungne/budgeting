@@ -15,6 +15,5 @@ export type Wallet = {
 export type WalletInput = {
   name: string
   kind: WalletKind
-  opening_balance: number
   color: string
 }

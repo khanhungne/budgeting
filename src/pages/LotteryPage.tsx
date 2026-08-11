@@ -3,18 +3,23 @@ import { AlertTriangle, Plus, RotateCcw, Scale, SlidersHorizontal, Trophy } from
 import { LotteryEntryForm } from '../features/lottery/components/LotteryEntryForm'
 import { LotteryEntryList } from '../features/lottery/components/LotteryEntryList'
 import { LotteryLimitCard } from '../features/lottery/components/LotteryLimitCard'
+import { LotteryResultForm } from '../features/lottery/components/LotteryResultForm'
+import { LotteryEntryDetail } from '../features/lottery/components/LotteryEntryDetail'
 import {
-  LOTTERY_REGION_LABELS,
-  LOTTERY_STATIONS,
+  LOTTERY_TYPE_LABELS,
+  LOTTERY_STATUS_LABELS,
 } from '../features/lottery/constants'
 import type { LotteryMonthlyLimit } from '../features/lottery/limitTypes'
 import type {
   LotteryEntry,
   LotteryEntryInput,
-  LotteryRegion,
+  LotteryMarket,
+  LotteryPlayType,
+  LotteryStatus,
 } from '../features/lottery/types'
 import { formatMonth } from '../lib/dates'
 import { formatCurrency } from '../lib/format'
+import { LOTTERY_MARKET_LABELS } from '../features/lottery/lottery-schedule'
 
 type LotteryPageProps = {
   month: string
@@ -39,7 +44,7 @@ type LotteryPageProps = {
   onLimitSave: (amount: number) => Promise<void>
 }
 
-type RegionFilter = 'all' | LotteryRegion
+type MarketFilter = 'all' | LotteryMarket
 
 export const LotteryPage = ({
   month,
@@ -59,25 +64,29 @@ export const LotteryPage = ({
 }: LotteryPageProps) => {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<LotteryEntry | null>(null)
-  const [region, setRegion] = useState<RegionFilter>('all')
+  const [resultEntry, setResultEntry] = useState<LotteryEntry | null>(null)
+  const [detailEntry, setDetailEntry] = useState<LotteryEntry | null>(null)
+  const [market, setMarket] = useState<MarketFilter>('all')
   const [station, setStation] = useState('all')
+  const [playType, setPlayType] = useState<'all' | LotteryPlayType>('all')
+  const [status, setStatus] = useState<'all' | LotteryStatus>('all')
 
   const stationOptions = useMemo(
     () =>
-      region === 'all'
-        ? Object.values(LOTTERY_STATIONS).flat()
-        : LOTTERY_STATIONS[region],
-    [region],
+      [...new Set(entries.filter((entry) => market === 'all' || entry.market === market).map((entry) => entry.station))],
+    [entries, market],
   )
 
   const filteredEntries = useMemo(
     () =>
       entries.filter(
         (entry) =>
-          (region === 'all' || entry.region === region) &&
-          (station === 'all' || entry.station === station),
+          (market === 'all' || entry.market === market) &&
+          (station === 'all' || entry.station === station) &&
+          (playType === 'all' || entry.play_type === playType) &&
+          (status === 'all' || entry.status === status),
       ),
-    [entries, region, station],
+    [entries, market, playType, station, status],
   )
 
   const openCreate = () => {
@@ -183,21 +192,21 @@ export const LotteryPage = ({
         <section className="mt-5 rounded-[1.5rem] bg-white p-4 shadow-[0_5px_20px_rgba(23,48,40,0.04)]">
           <div className="mb-3 flex items-center gap-2">
             <SlidersHorizontal className="size-4 text-violet-700" />
-            <p className="text-xs font-black text-slate-700">Lọc theo miền và đài</p>
+            <p className="text-xs font-black text-slate-700">Bộ lọc bản ghi</p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <label>
-              <span className="mb-1.5 block text-[11px] font-bold text-slate-400">Miền</span>
+              <span className="mb-1.5 block text-[11px] font-bold text-slate-400">Khu vực</span>
               <select
-                value={region}
+                value={market}
                 onChange={(event) => {
-                  setRegion(event.target.value as RegionFilter)
+                  setMarket(event.target.value as MarketFilter)
                   setStation('all')
                 }}
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 outline-none focus:border-violet-600"
               >
-                <option value="all">Tất cả miền</option>
-                {(Object.entries(LOTTERY_REGION_LABELS) as [LotteryRegion, string][]).map(
+                <option value="all">Tất cả khu vực</option>
+                {(Object.entries(LOTTERY_MARKET_LABELS) as [LotteryMarket, string][]).map(
                   ([value, label]) => (
                     <option key={value} value={value}>
                       {label}
@@ -207,6 +216,14 @@ export const LotteryPage = ({
               </select>
             </label>
             <label>
+              <span className="mb-1.5 block text-[11px] font-bold text-slate-400">Loại</span>
+              <select value={playType} onChange={(event) => setPlayType(event.target.value as 'all' | LotteryPlayType)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600"><option value="all">Tất cả loại</option>{(Object.entries(LOTTERY_TYPE_LABELS) as [LotteryPlayType,string][]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select>
+            </label>
+            <label>
+              <span className="mb-1.5 block text-[11px] font-bold text-slate-400">Trạng thái</span>
+              <select value={status} onChange={(event) => setStatus(event.target.value as 'all' | LotteryStatus)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600"><option value="all">Tất cả trạng thái</option>{(Object.entries(LOTTERY_STATUS_LABELS) as [LotteryStatus,string][]).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select>
+            </label>
+            {(market === 'south' || market === 'central') && <label>
               <span className="mb-1.5 block text-[11px] font-bold text-slate-400">Đài</span>
               <select
                 value={station}
@@ -220,14 +237,16 @@ export const LotteryPage = ({
                   </option>
                 ))}
               </select>
-            </label>
+            </label>}
           </div>
-          {(region !== 'all' || station !== 'all') && (
+          {(market !== 'all' || station !== 'all' || playType !== 'all' || status !== 'all') && (
             <button
               type="button"
               onClick={() => {
-                setRegion('all')
+                setMarket('all')
                 setStation('all')
+                setPlayType('all')
+                setStatus('all')
               }}
               className="mt-3 flex items-center gap-1 text-[11px] font-black text-violet-700"
             >
@@ -257,11 +276,7 @@ export const LotteryPage = ({
         <LotteryEntryList
           entries={filteredEntries}
           loading={loading}
-          onEdit={(entry) => {
-            setEditing(entry)
-            setFormOpen(true)
-          }}
-          onDelete={(entry) => void confirmDelete(entry)}
+          onOpen={setDetailEntry}
         />
       </div>
 
@@ -273,6 +288,8 @@ export const LotteryPage = ({
         onClose={() => setFormOpen(false)}
         onSave={onSave}
       />
+      {resultEntry && <LotteryResultForm entry={resultEntry} saving={saving} onClose={() => setResultEntry(null)} onSave={onSave} />}
+      {detailEntry && <LotteryEntryDetail entry={detailEntry} onClose={() => setDetailEntry(null)} onEdit={() => { setEditing(detailEntry); setDetailEntry(null); setFormOpen(true) }} onResult={() => { setResultEntry(detailEntry); setDetailEntry(null) }} onDelete={() => { setDetailEntry(null); void confirmDelete(detailEntry) }} />}
     </>
   )
 }

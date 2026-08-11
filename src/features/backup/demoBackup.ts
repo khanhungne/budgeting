@@ -1,12 +1,17 @@
 import { DEMO_BUDGET_STORAGE_KEY } from '../budgets/api/budgets'
 import { readLocalArray, writeLocalArray } from '../../lib/localStorage'
 import type { MonthlyBudget } from '../budgets/types'
+import { DEMO_CATEGORY_BUDGET_STORAGE_KEY } from '../budgets/api/categoryBudgets'
+import type { CategoryBudget } from '../budgets/categoryTypes'
+import { DEMO_DEBT_STORAGE_KEY } from '../debts/api/debts'
+import type { Debt } from '../debts/types'
 import { DEMO_LOTTERY_STORAGE_KEY } from '../lottery/api/lottery'
 import { DEMO_LOTTERY_LIMIT_STORAGE_KEY } from '../lottery/api/limits'
 import type { LotteryMonthlyLimit } from '../lottery/limitTypes'
 import type { LotteryEntry } from '../lottery/types'
 import { DEMO_TRANSACTION_STORAGE_KEY } from '../transactions/api/transactions'
 import type { Transaction } from '../transactions/types'
+import { DEMO_CATEGORY_STORAGE_KEY, type StoredCategory } from '../transactions/api/categories'
 import { DEMO_WALLET_STORAGE_KEY } from '../wallets/api/wallets'
 import { DEMO_DEFAULT_WALLET_ID } from '../wallets/constants'
 import type { Wallet } from '../wallets/types'
@@ -15,7 +20,7 @@ const DEMO_USER_ID = 'demo-local-user'
 
 type DemoBackup = {
   app: 'vi-nho'
-  version: 1 | 2 | 3 | 4
+  version: 1 | 2 | 3 | 4 | 5 | 6
   currency: 'VND'
   exported_at: string
   transactions: Transaction[]
@@ -23,6 +28,10 @@ type DemoBackup = {
   lottery_entries?: LotteryEntry[]
   lottery_limits?: LotteryMonthlyLimit[]
   wallets?: Wallet[]
+  category_budgets?: CategoryBudget[]
+  debts?: Debt[]
+  categories?: StoredCategory[]
+  custom_categories?: StoredCategory[]
 }
 
 const readArray = <T>(key: string): T[] => {
@@ -123,6 +132,31 @@ const isLotteryLimit = (value: unknown): value is LotteryMonthlyLimit => {
   )
 }
 
+const isCategoryBudget = (value: unknown): value is CategoryBudget => {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Partial<CategoryBudget>
+  return typeof item.id === 'string' && typeof item.category === 'string' &&
+    Number.isSafeInteger(item.amount) && Number(item.amount) > 0 &&
+    typeof item.month_start === 'string' && /^\d{4}-\d{2}-01$/.test(item.month_start)
+}
+
+const isDebt = (value: unknown): value is Debt => {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Partial<Debt>
+  const status = (value as { status?: unknown }).status
+  return typeof item.id === 'string' && typeof item.person === 'string' &&
+    Number.isSafeInteger(item.amount) && Number(item.amount) > 0 &&
+    (item.direction === 'i_owe' || item.direction === 'owed_to_me') &&
+    (status === 'open' || status === 'pending' || status === 'paid')
+}
+
+const isStoredCategory = (value: unknown): value is StoredCategory => {
+  if (!value || typeof value !== 'object') return false
+  const item = value as Partial<StoredCategory>
+  return typeof item.id === 'string' && typeof item.label === 'string' &&
+    (item.kind === 'expense' || item.kind === 'income') && typeof item.color === 'string'
+}
+
 export const exportDemoBackup = () => {
   const now = new Date().toISOString()
   const storedWallets = readArray<Wallet>(DEMO_WALLET_STORAGE_KEY)
@@ -143,7 +177,7 @@ export const exportDemoBackup = () => {
       ]
   const backup: DemoBackup = {
     app: 'vi-nho',
-    version: 4,
+    version: 6,
     currency: 'VND',
     exported_at: new Date().toISOString(),
     transactions: readArray<Transaction>(DEMO_TRANSACTION_STORAGE_KEY).map((transaction) => ({
@@ -158,6 +192,9 @@ export const exportDemoBackup = () => {
     })),
     lottery_limits: readArray<LotteryMonthlyLimit>(DEMO_LOTTERY_LIMIT_STORAGE_KEY),
     wallets,
+    category_budgets: readArray<CategoryBudget>(DEMO_CATEGORY_BUDGET_STORAGE_KEY),
+    debts: readArray<Debt>(DEMO_DEBT_STORAGE_KEY),
+    categories: readArray<StoredCategory>(DEMO_CATEGORY_STORAGE_KEY),
   }
 
   const blob = new Blob([JSON.stringify(backup, null, 2)], {
@@ -196,7 +233,9 @@ export const importDemoBackup = async (file: File) => {
     (backup.version !== 1 &&
       backup.version !== 2 &&
       backup.version !== 3 &&
-      backup.version !== 4) ||
+      backup.version !== 4 &&
+      backup.version !== 5 &&
+      backup.version !== 6) ||
     backup.currency !== 'VND'
   ) {
     throw new Error('Đây không phải file backup Ví Nhỏ phiên bản được hỗ trợ.')
@@ -218,6 +257,18 @@ export const importDemoBackup = async (file: File) => {
   const backupLotteryLimits = backup.lottery_limits ?? []
   if (!Array.isArray(backupLotteryLimits) || !backupLotteryLimits.every(isLotteryLimit)) {
     throw new Error('Danh sách hạn mức lô đề trong backup không hợp lệ.')
+  }
+  const backupCategoryBudgets = backup.category_budgets ?? []
+  if (!Array.isArray(backupCategoryBudgets) || !backupCategoryBudgets.every(isCategoryBudget)) {
+    throw new Error('Ngân sách danh mục trong backup không hợp lệ.')
+  }
+  const backupDebts = backup.debts ?? []
+  if (!Array.isArray(backupDebts) || !backupDebts.every(isDebt)) {
+    throw new Error('Danh sách công nợ trong backup không hợp lệ.')
+  }
+  const backupCategories = backup.categories ?? backup.custom_categories ?? []
+  if (!Array.isArray(backupCategories) || !backupCategories.every(isStoredCategory)) {
+    throw new Error('Danh sách danh mục tự tạo trong backup không hợp lệ.')
   }
 
   const now = new Date().toISOString()
@@ -241,15 +292,19 @@ export const importDemoBackup = async (file: File) => {
           updated_at: now,
         },
       ]
-  const wallets = importedWallets.some((wallet) => !wallet.is_archived)
+  const walletsWithActive = importedWallets.some((wallet) => !wallet.is_archived)
     ? importedWallets
     : importedWallets.map((wallet, index) =>
         index === 0 ? { ...wallet, is_archived: false } : wallet,
       )
+  const wallets = walletsWithActive.map((wallet) => ({
+    ...wallet,
+    opening_balance: 0,
+  }))
   const walletIds = new Set(wallets.map((wallet) => wallet.id))
   const fallbackWalletId =
     wallets.find((wallet) => !wallet.is_archived)?.id ?? wallets[0].id
-  const transactions = backup.transactions.map((transaction) => ({
+  const importedTransactions = backup.transactions.map((transaction) => ({
     ...transaction,
     user_id: DEMO_USER_ID,
     wallet_id:
@@ -259,6 +314,30 @@ export const importDemoBackup = async (file: File) => {
     updated_at: transaction.updated_at || now,
     created_at: transaction.created_at || now,
   }))
+  const importedTransactionIds = new Set(
+    importedTransactions.map((transaction) => transaction.id),
+  )
+  const openingBalanceTransactions: Transaction[] = walletsWithActive
+    .filter((wallet) => Number(wallet.opening_balance) > 0)
+    .filter(
+      (wallet) =>
+        !importedTransactionIds.has(`demo-opening-balance-${wallet.id}`),
+    )
+    .map((wallet) => ({
+      id: `demo-opening-balance-${wallet.id}`,
+      user_id: DEMO_USER_ID,
+      wallet_id: wallet.id,
+      kind: 'income',
+      amount: Number(wallet.opening_balance),
+      category: 'other-income',
+      note: 'Số dư khởi tạo (chuyển đổi tự động)',
+      occurred_on: /^\d{4}-\d{2}-\d{2}/.test(wallet.created_at)
+        ? wallet.created_at.slice(0, 10)
+        : now.slice(0, 10),
+      created_at: wallet.created_at || now,
+      updated_at: now,
+    }))
+  const transactions = [...importedTransactions, ...openingBalanceTransactions]
   const budgets = backup.monthly_budgets.map((budget) => ({
     ...budget,
     user_id: DEMO_USER_ID,
@@ -279,12 +358,36 @@ export const importDemoBackup = async (file: File) => {
     updated_at: limit.updated_at || now,
     created_at: limit.created_at || now,
   }))
+  const categoryBudgets = backupCategoryBudgets.map((item) => ({
+    ...item,
+    user_id: DEMO_USER_ID,
+    updated_at: item.updated_at || now,
+    created_at: item.created_at || now,
+  }))
+  const debts = backupDebts.map((item) => ({
+    ...item,
+    user_id: DEMO_USER_ID,
+    status: (item.status as string) === 'open' ? 'pending' as const : item.status,
+    occurred_on: item.occurred_on ?? item.created_at?.slice(0, 10) ?? now.slice(0, 10),
+    paid_on: item.paid_on ?? (item.status === 'paid' ? (item.updated_at || now).slice(0, 10) : null),
+    updated_at: item.updated_at || now,
+    created_at: item.created_at || now,
+  }))
+  const categories = backupCategories.map((item) => ({
+    ...item,
+    user_id: DEMO_USER_ID,
+    updated_at: item.updated_at || now,
+    created_at: item.created_at || now,
+  }))
 
   writeLocalArray(DEMO_WALLET_STORAGE_KEY, wallets)
   writeLocalArray(DEMO_TRANSACTION_STORAGE_KEY, transactions)
   writeLocalArray(DEMO_BUDGET_STORAGE_KEY, budgets)
   writeLocalArray(DEMO_LOTTERY_STORAGE_KEY, lotteryEntries)
   writeLocalArray(DEMO_LOTTERY_LIMIT_STORAGE_KEY, lotteryLimits)
+  writeLocalArray(DEMO_CATEGORY_BUDGET_STORAGE_KEY, categoryBudgets)
+  writeLocalArray(DEMO_DEBT_STORAGE_KEY, debts)
+  writeLocalArray(DEMO_CATEGORY_STORAGE_KEY, categories)
 
   return {
     transactionCount: transactions.length,

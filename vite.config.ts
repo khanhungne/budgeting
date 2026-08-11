@@ -61,7 +61,25 @@ export default defineConfig({
       workbox: {
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        globIgnores: [
+          '**/AccountPage-*.js',
+          '**/DebtsPage-*.js',
+          '**/LotteryPage-*.js',
+          '**/StatisticsPage-*.js',
+          '**/TransactionsPage-*.js',
+        ],
         runtimeCaching: [
+          {
+            urlPattern: /\/assets\/.*\.(?:js|css)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'lazy-assets',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkOnly',

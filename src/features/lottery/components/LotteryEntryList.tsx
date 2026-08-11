@@ -1,17 +1,17 @@
-import { Pencil, TicketCheck, Trash2 } from 'lucide-react'
+import { ChevronRight, TicketCheck } from 'lucide-react'
 import { formatCurrency, formatDate } from '../../../lib/format'
 import {
-  LOTTERY_REGION_LABELS,
   LOTTERY_STATUS_LABELS,
   LOTTERY_TYPE_LABELS,
 } from '../constants'
+import { getPendingUiLabel, LOTTERY_MARKET_LABELS } from '../lottery-schedule'
+import { NumberChip } from './NumberChip'
 import type { LotteryEntry } from '../types'
 
 type LotteryEntryListProps = {
   entries: LotteryEntry[]
   loading: boolean
-  onEdit: (entry: LotteryEntry) => void
-  onDelete: (entry: LotteryEntry) => void
+  onOpen: (entry: LotteryEntry) => void
 }
 
 const statusStyles = {
@@ -23,8 +23,7 @@ const statusStyles = {
 export const LotteryEntryList = ({
   entries,
   loading,
-  onEdit,
-  onDelete,
+  onOpen,
 }: LotteryEntryListProps) => {
   if (loading) {
     return (
@@ -57,6 +56,9 @@ export const LotteryEntryList = ({
         return (
           <article
             key={entry.id}
+            onClick={() => onOpen(entry)}
+            role="button"
+            tabIndex={0}
             className="rounded-[1.5rem] bg-white p-4 shadow-[0_5px_20px_rgba(23,48,40,0.05)]"
           >
             <div className="flex items-start justify-between gap-3">
@@ -66,41 +68,20 @@ export const LotteryEntryList = ({
                     {LOTTERY_TYPE_LABELS[entry.play_type]}
                   </span>
                   <span className={`rounded-lg px-2 py-1 text-[11px] font-black ${statusStyles[entry.status]}`}>
-                    {LOTTERY_STATUS_LABELS[entry.status]}
+                    {entry.status === 'pending' ? getPendingUiLabel(entry.draw_date, entry.draw_time) : LOTTERY_STATUS_LABELS[entry.status]}
                   </span>
                 </div>
                 <p className="mt-2 text-[11px] font-bold text-slate-400">
-                  {LOTTERY_REGION_LABELS[entry.region]} · {entry.station}
+                  {LOTTERY_MARKET_LABELS[entry.market]}{entry.market === 'south' || entry.market === 'central' || entry.market === 'north' ? ` · ${entry.station}` : ''}
                 </p>
+                <p className="mt-1 text-[10px] font-bold text-violet-500">Xổ lúc {entry.draw_time}{entry.market === 'hcm_vip' ? ' · ALL' : ''}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {entry.numbers.map((number) => (
-                    <span
-                      key={number}
-                      className="grid size-9 place-items-center rounded-full bg-slate-900 text-xs font-black text-white"
-                    >
-                      {number}
-                    </span>
+                    <NumberChip key={number} number={number} hit={(entry.hit_numbers ?? []).includes(number)} />
                   ))}
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onEdit(entry)}
-                  className="grid size-8 place-items-center rounded-lg bg-slate-50 text-slate-400 hover:text-violet-700"
-                  aria-label="Sửa bản ghi"
-                >
-                  <Pencil className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDelete(entry)}
-                  className="grid size-8 place-items-center rounded-lg bg-slate-50 text-slate-400 hover:text-red-500"
-                  aria-label="Xoá bản ghi"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
+              <ChevronRight className="size-5 text-slate-300" />
             </div>
 
             <div className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-xs">

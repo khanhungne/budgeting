@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Archive, ArchiveRestore, LoaderCircle, Pencil, Plus, WalletCards, X } from 'lucide-react'
 import { Alert } from '../../../components/ui/Alert'
 import { Button } from '../../../components/ui/Button'
-import { formatCurrency, formatVndInput, parseVndInput } from '../../../lib/format'
+import { formatCurrency } from '../../../lib/format'
 import { WALLET_COLORS, WALLET_KIND_EMOJI, WALLET_KIND_LABELS } from '../constants'
 import type { Wallet, WalletInput, WalletKind } from '../types'
 
@@ -19,7 +19,6 @@ type WalletManagerProps = {
 const defaultInput = (): WalletInput => ({
   name: '',
   kind: 'cash',
-  opening_balance: 0,
   color: WALLET_COLORS[0],
 })
 
@@ -35,7 +34,6 @@ export const WalletManager = ({
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Wallet | null>(null)
   const [form, setForm] = useState<WalletInput>(defaultInput)
-  const [balanceText, setBalanceText] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -44,31 +42,23 @@ export const WalletManager = ({
       setForm({
         name: editing.name,
         kind: editing.kind,
-        opening_balance: Number(editing.opening_balance),
         color: editing.color,
       })
-      setBalanceText(formatVndInput(Number(editing.opening_balance)))
     } else {
       setForm(defaultInput())
-      setBalanceText('')
     }
     setFormError(null)
   }, [editing, formOpen])
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    const openingBalance = parseVndInput(balanceText)
     if (!form.name.trim() || form.name.trim().length > 60) {
       setFormError('Tên ví phải có từ 1–60 ký tự.')
       return
     }
-    if (!Number.isSafeInteger(openingBalance) || openingBalance < 0) {
-      setFormError('Số dư ban đầu không hợp lệ.')
-      return
-    }
     setFormError(null)
     try {
-      await onSave({ ...form, name: form.name.trim(), opening_balance: openingBalance }, editing?.id)
+      await onSave({ ...form, name: form.name.trim() }, editing?.id)
       setFormOpen(false)
     } catch (reason) {
       setFormError(reason instanceof Error ? reason.message : 'Không lưu được ví.')
@@ -86,6 +76,9 @@ export const WalletManager = ({
               Nguồn tiền
             </p>
             <h2 className="mt-1 text-lg font-black text-slate-900">Ví và tài khoản</h2>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Chỉ giao dịch thu/chi làm thay đổi số dư
+            </p>
           </div>
           <button
             type="button"
@@ -131,8 +124,12 @@ export const WalletManager = ({
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-black text-slate-700">
-                    {formatCurrency(balances[wallet.id] ?? Number(wallet.opening_balance))}
+                  <p
+                    className={`text-xs font-black ${
+                      (balances[wallet.id] ?? 0) < 0 ? 'text-red-600' : 'text-slate-700'
+                    }`}
+                  >
+                    {formatCurrency(balances[wallet.id] ?? 0)}
                   </p>
                   <div className="mt-1 flex justify-end gap-2">
                     <button
@@ -231,21 +228,12 @@ export const WalletManager = ({
                 </select>
               </label>
 
-              <label className="block">
-                <span className="mb-2 block text-sm font-bold text-slate-700">
-                  Số dư ban đầu
-                </span>
-                <span className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 focus-within:border-emerald-700">
-                  <input
-                    inputMode="numeric"
-                    value={balanceText}
-                    onChange={(event) => setBalanceText(formatVndInput(event.target.value))}
-                    placeholder="0"
-                    className="h-14 min-w-0 flex-1 bg-transparent font-black outline-none"
-                  />
-                  <span className="text-xs font-black text-slate-400">VND</span>
-                </span>
-              </label>
+              {!editing && (
+                <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-800">
+                  Ví mới bắt đầu từ 0 ₫. Hãy tạo giao dịch <strong>Khoản thu</strong>{' '}
+                  để đưa tiền vào ví.
+                </div>
+              )}
 
               <fieldset>
                 <legend className="mb-2 text-sm font-bold text-slate-700">Màu nhận diện</legend>

@@ -6,10 +6,15 @@ import { useAuth } from '../features/auth/AuthProvider'
 import { AuthScreen } from '../features/auth/components/AuthScreen'
 import { PasswordRecoveryScreen } from '../features/auth/components/PasswordRecoveryScreen'
 import { useBudget } from '../features/budgets/hooks/useBudget'
+import { useCategoryBudgets } from '../features/budgets/hooks/useCategoryBudgets'
 import { useLotteryEntries } from '../features/lottery/hooks/useLotteryEntries'
 import { useLotteryLimit } from '../features/lottery/hooks/useLotteryLimit'
+import { useDebts } from '../features/debts/hooks/useDebts'
 import { TransactionForm } from '../features/transactions/components/TransactionForm'
+import { fetchTransactionReceipt } from '../features/transactions/api/transactions'
+import { findInsufficientWallet } from '../features/transactions/balance'
 import { useTransactions } from '../features/transactions/hooks/useTransactions'
+import { useCategories } from '../features/transactions/hooks/useCategories'
 import {
   useTransactionTrends,
   type TrendMonths,
@@ -18,6 +23,7 @@ import type { Transaction } from '../features/transactions/types'
 import { calculateTotalWalletBalance } from '../features/wallets/balance'
 import { useWallets } from '../features/wallets/hooks/useWallets'
 import { currentMonth } from '../lib/dates'
+import { formatCurrency } from '../lib/format'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { DashboardPage } from '../pages/DashboardPage'
 
@@ -26,6 +32,9 @@ const AccountPage = lazy(() =>
 )
 const LotteryPage = lazy(() =>
   import('../pages/LotteryPage').then((module) => ({ default: module.LotteryPage })),
+)
+const DebtsPage = lazy(() =>
+  import('../pages/DebtsPage').then((module) => ({ default: module.DebtsPage })),
 )
 const StatisticsPage = lazy(() =>
   import('../pages/StatisticsPage').then((module) => ({
@@ -53,12 +62,15 @@ export const App = () => {
 
   const demoMode = !isSupabaseConfigured
   const activeUser = demoMode ? DEMO_USER : user
-  const transactionState = useTransactions(activeUser?.id ?? '', month)
-  const walletState = useWallets(
-    activeUser?.id ?? '',
-    activeTab === 'home' || activeTab === 'account',
-  )
+  const needsTransactions = activeTab === 'home' || activeTab === 'transactions' || activeTab === 'statistics'
+  const needsCategories = needsTransactions || activeTab === 'account'
+  const needsWallets = activeTab === 'home' || activeTab === 'transactions' || activeTab === 'account'
+  const transactionState = useTransactions(activeUser?.id ?? '', month, needsTransactions)
+  const categoryState = useCategories(activeUser?.id ?? '', needsCategories)
+  const walletState = useWallets(activeUser?.id ?? '', true, needsWallets)
   const budgetState = useBudget(activeUser?.id ?? '', month, activeTab === 'home')
+  const categoryBudgetState = useCategoryBudgets(activeUser?.id ?? '', month, activeTab === 'home')
+  const debtState = useDebts(activeUser?.id ?? '', activeTab === 'debts')
   const lotteryState = useLotteryEntries(
     activeUser?.id ?? '',
     month,
@@ -90,19 +102,49 @@ export const App = () => {
     setFormOpen(true)
   }
 
-  const openEdit = (transaction: Transaction) => {
-    setEditing(transaction)
+  const loadReceipt = async (transaction: Transaction) => {
+    try {
+      return await fetchTransactionReceipt(transaction.id)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Không thể tải ảnh hóa đơn.')
+      return null
+    }
+  }
+
+  const openEdit = async (transaction: Transaction) => {
+    const receiptImage = transaction.receipt_attached
+      ? await loadReceipt(transaction)
+      : transaction.receipt_image ?? null
+    setEditing({ ...transaction, receipt_image: receiptImage })
     setFormOpen(true)
   }
 
   const confirmDelete = async (transaction: Transaction) => {
     const label = transaction.note || 'giao dịch này'
+    if (walletState.loading) {
+      window.alert('Đang tải số dư ví. Hãy thử lại sau giây lát.')
+      return
+    }
+    const insufficient = findInsufficientWallet(
+      walletState.balances,
+      null,
+      transaction,
+    )
+    if (insufficient) {
+      const wallet = walletState.wallets.find(
+        (item) => item.id === insufficient.walletId,
+      )
+      window.alert(
+        `Không thể xoá khoản thu vì ví “${wallet?.name ?? 'đã chọn'}” sẽ âm ${formatCurrency(
+          Math.abs(insufficient.projectedBalance),
+        )}.`,
+      )
+      return
+    }
     if (window.confirm(`Xoá “${label}”? Thao tác này không thể hoàn tác.`)) {
       try {
         await transactionState.remove(transaction.id)
-        if (activeTab === 'home' || activeTab === 'account') {
-          await walletState.refreshBalances()
-        }
+        await walletState.refreshBalances()
       } catch {
         // Hook đã đưa lỗi lên giao diện.
       }
@@ -137,9 +179,17 @@ export const App = () => {
             error={transactionState.error}
             onMonthChange={setMonth}
             onBudgetSave={budgetState.save}
+            categoryBudgets={categoryBudgetState.budgets}
+            categoryBudgetsLoading={categoryBudgetState.loading}
+            categoryBudgetsSaving={categoryBudgetState.saving}
+            categoryBudgetsError={categoryBudgetState.error}
+            onCategoryBudgetSave={categoryBudgetState.save}
+            onCategoryBudgetRemove={categoryBudgetState.remove}
+            customCategories={categoryState.categories}
             onViewAll={() => setActiveTab('transactions')}
-            onEdit={openEdit}
+            onEdit={(transaction) => void openEdit(transaction)}
             onDelete={(transaction) => void confirmDelete(transaction)}
+            onViewReceipt={loadReceipt}
           />
         )}
         {activeTab === 'transactions' && (
@@ -149,8 +199,22 @@ export const App = () => {
             wallets={walletState.wallets}
             loading={transactionState.loading}
             onMonthChange={setMonth}
-            onEdit={openEdit}
+            categories={categoryState.categories}
+            onEdit={(transaction) => void openEdit(transaction)}
             onDelete={(transaction) => void confirmDelete(transaction)}
+            onViewReceipt={loadReceipt}
+          />
+        )}
+        {activeTab === 'debts' && (
+          <DebtsPage
+            debts={debtState.debts}
+            loading={debtState.loading}
+            saving={debtState.saving}
+            error={debtState.error}
+            totals={debtState.totals}
+            onSave={debtState.save}
+            onStatus={debtState.updateStatus}
+            onRemove={debtState.remove}
           />
         )}
         {activeTab === 'lottery' && (
@@ -182,6 +246,7 @@ export const App = () => {
             trendMonths={trendMonths}
             onTrendMonthsChange={setTrendMonths}
             onMonthChange={setMonth}
+            categories={categoryState.categories}
           />
         )}
         {activeTab === 'account' && (
@@ -192,6 +257,9 @@ export const App = () => {
             onDemoDataChanged={() => {
               void transactionState.refresh()
               void budgetState.refresh()
+              void categoryBudgetState.refresh()
+              void categoryState.refresh()
+              void debtState.refresh()
               void lotteryState.refresh()
               void lotteryLimitState.refresh()
               void walletState.refresh()
@@ -204,6 +272,12 @@ export const App = () => {
             walletsError={walletState.error}
             onWalletSave={walletState.save}
             onWalletToggle={walletState.toggleArchived}
+            categories={categoryState.categories}
+            categoriesLoading={categoryState.loading}
+            categoriesSaving={categoryState.saving}
+            categoriesError={categoryState.error}
+            onCategorySave={categoryState.save}
+            onCategoryRemove={(id) => categoryState.remove(id).catch(() => undefined)}
           />
         )}
         </Suspense>
@@ -214,13 +288,30 @@ export const App = () => {
         month={month}
         editing={editing}
         saving={transactionState.saving}
+        customCategories={categoryState.categories}
         wallets={walletState.wallets}
+        walletBalances={walletState.balances}
+        walletBalancesLoading={walletState.loading}
         onClose={() => setFormOpen(false)}
+        onAddCategory={categoryState.add}
         onSave={async (input, editingId) => {
-          await transactionState.save(input, editingId)
-          if (activeTab === 'home' || activeTab === 'account') {
-            await walletState.refreshBalances()
+          const insufficient = findInsufficientWallet(
+            walletState.balances,
+            input,
+            editing,
+          )
+          if (insufficient) {
+            const wallet = walletState.wallets.find(
+              (item) => item.id === insufficient.walletId,
+            )
+            throw new Error(
+              `Số dư ví “${wallet?.name ?? 'đã chọn'}” không đủ. Thiếu ${formatCurrency(
+                Math.abs(insufficient.projectedBalance),
+              )}.`,
+            )
           }
+          await transactionState.save(input, editingId)
+          await walletState.refreshBalances()
           if (activeTab === 'statistics') await trendState.refresh()
         }}
       />

@@ -5,10 +5,11 @@ import {
   List,
   Plus,
   TicketCheck,
+  HandCoins,
 } from 'lucide-react'
 import type { PropsWithChildren } from 'react'
 
-export type AppTab = 'home' | 'transactions' | 'lottery' | 'statistics' | 'account'
+export type AppTab = 'home' | 'transactions' | 'debts' | 'lottery' | 'statistics' | 'account'
 
 type AppShellProps = PropsWithChildren<{
   activeTab: AppTab
@@ -22,6 +23,7 @@ const items = [
   { id: 'lottery' as const, label: 'Lô đề', icon: TicketCheck },
   { id: 'statistics' as const, label: 'Thống kê', icon: BarChart3 },
   { id: 'account' as const, label: 'Tài khoản', icon: CircleUserRound },
+  { id: 'debts' as const, label: 'Công nợ', icon: HandCoins },
 ]
 
 export const AppShell = ({ children, activeTab, onTabChange, onAdd }: AppShellProps) => (
@@ -31,16 +33,16 @@ export const AppShell = ({ children, activeTab, onTabChange, onAdd }: AppShellPr
     </div>
 
     <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg border-t border-slate-100 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(33,59,50,0.08)] backdrop-blur-lg">
-      <button
+      {(activeTab === 'home' || activeTab === 'transactions') && <button
         type="button"
         onClick={onAdd}
         className="absolute left-1/2 top-0 grid size-14 -translate-x-1/2 -translate-y-[110%] place-items-center rounded-2xl border-4 border-[#f5f7f2] bg-[#efb44d] text-emerald-950 shadow-lg transition active:scale-95"
         aria-label="Thêm giao dịch thu chi"
       >
         <Plus className="size-6" strokeWidth={3} />
-      </button>
+      </button>}
 
-      <div className="grid h-[74px] grid-cols-5 items-center">
+      <div className="grid h-[74px] grid-cols-6 items-center">
         {items.map(({ id, label, icon: Icon }) => (
           <button
             key={id}

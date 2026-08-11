@@ -24,9 +24,48 @@ const createDefaultWallet = (userId: string): Wallet => {
   }
 }
 
+const migrateDemoOpeningBalances = (wallets: Wallet[]) => {
+  const legacyWallets = wallets.filter((wallet) => Number(wallet.opening_balance) > 0)
+  if (legacyWallets.length === 0) return wallets
+
+  const transactions =
+    readLocalArray<Transaction>(DEMO_TRANSACTION_STORAGE_KEY) ?? []
+  const transactionIds = new Set(transactions.map((transaction) => transaction.id))
+  const migratedTransactions = [...transactions]
+
+  for (const wallet of legacyWallets) {
+    const migrationId = `demo-opening-balance-${wallet.id}`
+    if (transactionIds.has(migrationId)) continue
+    const occurredOn = /^\d{4}-\d{2}-\d{2}/.test(wallet.created_at)
+      ? wallet.created_at.slice(0, 10)
+      : new Date().toISOString().slice(0, 10)
+    migratedTransactions.push({
+      id: migrationId,
+      user_id: wallet.user_id,
+      wallet_id: wallet.id,
+      kind: 'income',
+      amount: Number(wallet.opening_balance),
+      category: 'other-income',
+      note: 'Số dư khởi tạo (chuyển đổi tự động)',
+      occurred_on: occurredOn,
+      created_at: wallet.created_at,
+      updated_at: new Date().toISOString(),
+    })
+  }
+
+  const migratedWallets = wallets.map((wallet) => ({
+    ...wallet,
+    opening_balance: 0,
+    updated_at: new Date().toISOString(),
+  }))
+  writeLocalArray(DEMO_TRANSACTION_STORAGE_KEY, migratedTransactions)
+  writeLocalArray(DEMO_WALLET_STORAGE_KEY, migratedWallets)
+  return migratedWallets
+}
+
 const readDemoWallets = (userId: string): Wallet[] => {
   const stored = readLocalArray<Wallet>(DEMO_WALLET_STORAGE_KEY)
-  if (stored?.length) return stored
+  if (stored?.length) return migrateDemoOpeningBalances(stored)
   const wallets = [createDefaultWallet(userId)]
   writeLocalArray(DEMO_WALLET_STORAGE_KEY, wallets)
   return wallets
@@ -73,7 +112,7 @@ export const fetchWallets = async (userId: string) => {
 
 export const fetchWalletBalances = async (wallets: Wallet[]) => {
   const balances = Object.fromEntries(
-    wallets.map((wallet) => [wallet.id, Number(wallet.opening_balance)]),
+    wallets.map((wallet) => [wallet.id, 0]),
   ) as Record<string, number>
 
   let transactions: Pick<Transaction, 'wallet_id' | 'kind' | 'amount'>[] = []
@@ -131,6 +170,7 @@ export const saveWallet = async (
       ? { ...existing, ...normalized, updated_at: now }
       : {
           ...normalized,
+          opening_balance: 0,
           id: crypto.randomUUID(),
           user_id: userId,
           is_archived: false,
@@ -144,7 +184,9 @@ export const saveWallet = async (
   const client = await getSupabaseClient()
   const query = editingId
     ? client.from('wallets').update(normalized).eq('id', editingId)
-    : client.from('wallets').insert({ ...normalized, user_id: userId })
+    : client
+        .from('wallets')
+        .insert({ ...normalized, opening_balance: 0, user_id: userId })
   const { data, error } = await query.select(WALLET_COLUMNS).single()
   if (error) throw error
   return data as Wallet

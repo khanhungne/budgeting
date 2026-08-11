@@ -7,7 +7,13 @@ import type { Transaction, TransactionInput } from '../types'
 export const DEMO_TRANSACTION_STORAGE_KEY = 'vi-nho.demo.transactions.v1'
 const DEMO_USER_ID = 'demo-local-user'
 const TRANSACTION_COLUMNS =
-  'id,user_id,wallet_id,kind,amount,category,note,occurred_on,created_at,updated_at'
+  'id,user_id,wallet_id,kind,amount,category,note,receipt_attached,occurred_on,created_at,updated_at'
+
+const withoutReceiptPayload = (transaction: Transaction): Transaction => ({
+  ...transaction,
+  receipt_attached: Boolean(transaction.receipt_image || transaction.receipt_attached),
+  receipt_image: null,
+})
 
 export type TransactionTrendRow = Pick<
   Transaction,
@@ -64,6 +70,7 @@ const createDemoSeed = (): Transaction[] => {
     wallet_id: DEMO_DEFAULT_WALLET_ID,
     created_at: now,
     updated_at: now,
+    receipt_image: null,
   }))
 }
 
@@ -106,7 +113,7 @@ export const fetchTransactions = async (userId: string, month: string) => {
         (first, second) =>
           second.occurred_on.localeCompare(first.occurred_on) ||
           second.created_at.localeCompare(first.created_at),
-      )
+      ).map(withoutReceiptPayload)
   }
 
   const client = await getSupabaseClient()
@@ -167,13 +174,13 @@ export const createTransaction = async (userId: string, input: TransactionInput)
       updated_at: now,
     }
     writeDemoTransactions([transaction, ...readDemoTransactions()])
-    return transaction
+    return withoutReceiptPayload(transaction)
   }
 
   const client = await getSupabaseClient()
   const { data, error } = await client
     .from('transactions')
-    .insert({ ...input, user_id: userId })
+    .insert({ ...input, receipt_attached: Boolean(input.receipt_image), user_id: userId })
     .select(TRANSACTION_COLUMNS)
     .single()
 
@@ -196,13 +203,13 @@ export const updateTransaction = async (id: string, input: TransactionInput) => 
     writeDemoTransactions(
       transactions.map((transaction) => (transaction.id === id ? updated : transaction)),
     )
-    return updated
+    return withoutReceiptPayload(updated)
   }
 
   const client = await getSupabaseClient()
   const { data, error } = await client
     .from('transactions')
-    .update(input)
+    .update({ ...input, receipt_attached: Boolean(input.receipt_image) })
     .eq('id', id)
     .select(TRANSACTION_COLUMNS)
     .single()
@@ -222,4 +229,12 @@ export const removeTransaction = async (id: string) => {
   const client = await getSupabaseClient()
   const { error } = await client.from('transactions').delete().eq('id', id)
   if (error) throw error
+}
+
+export const fetchTransactionReceipt = async (id: string) => {
+  if (!isSupabaseConfigured) return readDemoTransactions().find((item) => item.id === id)?.receipt_image ?? null
+  const client = await getSupabaseClient()
+  const { data, error } = await client.from('transactions').select('receipt_image').eq('id', id).single()
+  if (error) throw error
+  return (data?.receipt_image as string | null) ?? null
 }

@@ -78,7 +78,7 @@ Mở web/PWA
     ↓
 Đăng ký → Xác nhận email → Đăng nhập
     ↓
-Khai báo ví và số dư ban đầu
+Tạo các ví dùng để chứa tiền
     ↓
 Thêm giao dịch thu/chi
     ↓
@@ -89,18 +89,19 @@ Xem lịch sử → lọc giao dịch → xem thống kê
 Quản lý ví, cài PWA hoặc đăng xuất tại trang Tài khoản
 ```
 
-Thanh điều hướng dưới cùng có năm màn hình:
+Thanh điều hướng dưới cùng có sáu màn hình:
 
 | Màn hình | Mục đích |
 | --- | --- |
 | **Tổng quan** | Tổng số dư hiện tại, thu/chi tháng, ngân sách, danh mục và giao dịch gần đây |
 | **Giao dịch** | Xem, tìm kiếm, lọc, sửa và xoá lịch sử thu/chi |
+| **Công nợ** | Theo dõi khoản mình nợ, người khác nợ mình và lịch sử đã thanh toán |
 | **Lô đề** | Sổ ghi chép riêng, hạn mức và thống kê lãi/lỗ |
 | **Thống kê** | Phân tích thu/chi theo ngày, tháng, danh mục và xu hướng |
 | **Tài khoản** | Quản lý ví, trạng thái đồng bộ, cài PWA và đăng xuất |
 
-Nút **+** màu vàng nằm phía trên thanh điều hướng luôn mở form thêm giao dịch
-thu/chi, bất kể người dùng đang ở màn hình nào.
+Nút **+** màu vàng nằm phía trên thanh điều hướng mở form thêm giao dịch thu/chi tại màn
+hình **Tổng quan** và **Giao dịch**. Màn hình Công nợ và Lô đề có nút thêm riêng.
 
 ### Flow 1 — Đăng ký, xác nhận email và đăng nhập
 
@@ -137,22 +138,20 @@ thấp. Production nên cấu hình Custom SMTP để email xác nhận và khô
 ### Flow 2 — Khởi tạo tài khoản và ví đầu tiên
 
 Sau lần đăng nhập đầu tiên, nếu tài khoản chưa có ví, ứng dụng tự tạo ví
-**Tiền mặt** với số dư ban đầu `0 ₫`.
+**Tiền mặt** với số dư `0 ₫`.
 
 Người dùng nên vào **Tài khoản → Ví và tài khoản**:
 
 1. Sửa ví mặc định hoặc chọn **+** để tạo ví mới.
 2. Chọn loại ví: tiền mặt, ngân hàng hoặc ví điện tử.
-3. Nhập tên, màu nhận diện và **Số dư ban đầu**.
-4. Lưu ví.
+3. Nhập tên và màu nhận diện.
+4. Lưu ví. Ví mới luôn bắt đầu từ `0 ₫`.
+5. Dùng nút giao dịch **+** và tạo **Khoản thu** để đưa tiền vào ví.
 
-**Số dư ban đầu** là số tiền thực tế đang có tại thời điểm bắt đầu theo dõi. Không
-nhập lại số tiền này thành giao dịch **Tiền vào**, nếu không số dư sẽ bị cộng hai
-lần.
-
-Ví dụ: tài khoản ngân hàng đang có `5.000.000 ₫` khi bắt đầu dùng app thì nhập
-`5.000.000` vào **Số dư ban đầu**. Chỉ các khoản phát sinh sau thời điểm đó mới
-được tạo thành giao dịch.
+Nguồn tiền chỉ là nơi chứa tiền; tạo hoặc sửa ví không làm tăng tổng số dư. Nếu
+tài khoản ngân hàng đang có `5.000.000 ₫` khi bắt đầu dùng app, hãy tạo một giao
+dịch **Khoản thu** `5.000.000 ₫`, chọn ví ngân hàng và danh mục **Thu khác**.
+Như vậy khoản tiền luôn có lịch sử rõ ràng và được phân bổ đúng vào một ví.
 
 ### Flow 3 — Thêm, sửa và xoá giao dịch
 
@@ -173,12 +172,14 @@ Sau khi lưu:
 - Số dư của ví được tính lại.
 - Tổng số dư trên trang chủ được cập nhật.
 - Thu, chi, ngân sách và thống kê của tháng liên quan thay đổi theo giao dịch.
+- Khoản chi làm ví âm sẽ bị từ chối với thông báo **Số dư ví không đủ**.
 
 #### Sửa hoặc xoá
 
 - Chọn một giao dịch trong danh sách để sửa các thông tin đã nhập.
 - Chọn nút xoá và xác nhận để xoá vĩnh viễn giao dịch.
 - Sau khi sửa/xoá, số dư ví và các số liệu liên quan được tính lại.
+- Không thể sửa hoặc xoá một khoản thu nếu thao tác đó làm ví bị âm.
 
 ### Flow 4 — Trang Tổng quan
 
@@ -187,18 +188,19 @@ tháng để xem số liệu của tháng khác.
 
 #### Tổng số dư hiện tại
 
-Con số lớn trên đầu trang sử dụng toàn bộ lịch sử giao dịch của các ví đang hoạt
-động, không phụ thuộc tháng đang chọn:
+Con số lớn trên đầu trang sử dụng toàn bộ lịch sử giao dịch của tất cả ví, không
+phụ thuộc tháng đang chọn:
 
 ```text
 Tổng số dư hiện tại
-= tổng số dư ban đầu của các ví đang hoạt động
-+ toàn bộ tiền vào của các ví đó
-− toàn bộ tiền ra của các ví đó
+= tổng toàn bộ khoản thu
+− tổng toàn bộ khoản chi
+= tổng số dư của tất cả nguồn tiền
 ```
 
-Ví đã lưu trữ vẫn giữ dữ liệu nhưng không được cộng vào tổng số dư trang chủ.
-Khôi phục ví để đưa số dư của ví đó trở lại tổng.
+Tạo, đổi tên, đổi loại hoặc lưu trữ ví không làm tăng hay giảm tổng số dư. Ví đã
+lưu trữ vẫn được cộng vào tổng vì tiền trong ví vẫn tồn tại; lưu trữ chỉ ngăn ví
+được chọn cho giao dịch mới.
 
 #### Số liệu theo tháng
 
@@ -207,10 +209,11 @@ tháng đang chọn:
 
 ```text
 Biến động tháng = Tiền vào trong tháng − Tiền ra trong tháng
+Số dư cuối tháng = Số dư tháng trước + Biến động tháng
 ```
 
-Ví dụ: số dư ban đầu là `5.000.000 ₫`, sau đó nhận `10.000.000 ₫` và chi
-`2.000.000 ₫`. Tổng số dư hiện tại là `13.000.000 ₫`; biến động tháng là
+Ví dụ: số dư tháng trước là `5.000.000 ₫`, tháng này nhận `10.000.000 ₫` và chi
+`2.000.000 ₫`. Số dư cuối tháng là `13.000.000 ₫`; biến động tháng là
 `8.000.000 ₫`.
 
 #### Các khu vực khác
@@ -227,8 +230,8 @@ Ví dụ: số dư ban đầu là `5.000.000 ₫`, sau đó nhận `10.000.000 �
 3. Ứng dụng so sánh tổng **Tiền ra** với hạn mức.
 4. Thanh tiến độ thể hiện số tiền đã dùng, phần còn lại hoặc mức vượt.
 
-Mỗi tháng có một ngân sách riêng. Tiền vào và số dư ban đầu không làm tăng phần
-ngân sách còn lại; ngân sách chỉ theo dõi khoản chi.
+Mỗi tháng có một ngân sách riêng. Tiền vào không làm tăng phần ngân sách còn lại;
+ngân sách chỉ theo dõi khoản chi.
 
 ### Flow 6 — Lịch sử Giao dịch
 
@@ -249,18 +252,27 @@ Bộ lọc chỉ thay đổi nội dung hiển thị, không thay đổi dữ li
 Tại **Tài khoản → Ví và tài khoản**, mỗi ví hiển thị số dư riêng:
 
 ```text
-Số dư ví = Số dư ban đầu + toàn bộ tiền vào ví − toàn bộ tiền ra khỏi ví
+Số dư ví = Toàn bộ khoản thu vào ví − toàn bộ khoản chi từ ví
+Tổng số dư = Tổng số dư của tất cả ví
 ```
 
 Người dùng có thể:
 
 - Tạo nhiều ví.
-- Sửa tên, loại, màu và số dư ban đầu.
+- Sửa tên, loại và màu.
 - Lưu trữ ví không còn sử dụng.
 - Khôi phục ví đã lưu trữ.
 
-Không thể lưu trữ ví hoạt động cuối cùng. Sửa số dư ban đầu sẽ thay đổi toàn bộ số
-dư hiện tại của ví; chỉ nên làm khi cần sửa dữ liệu khởi tạo.
+Không thể lưu trữ ví hoạt động cuối cùng. Ví mới luôn là `0 ₫`; chỉ giao dịch thu
+mới đưa tiền vào ví. Ví đã lưu trữ còn tiền vẫn nằm trong tổng số dư nhưng không
+được chọn cho giao dịch mới.
+
+Vì mọi giao dịch đều thuộc đúng một ví nên tổng các nguồn tiền không thể lớn hơn
+tổng số dư; hệ thống duy trì quan hệ mạnh hơn:
+
+```text
+Tổng các nguồn tiền = Tổng số dư
+```
 
 ### Flow 8 — Thống kê
 
@@ -355,9 +367,12 @@ Các bảng cloud chính:
 
 | Bảng/View | Dữ liệu |
 | --- | --- |
-| `wallets` | Ví, loại ví, số dư ban đầu và trạng thái lưu trữ |
+| `wallets` | Nơi chứa tiền, loại ví và trạng thái lưu trữ |
 | `transactions` | Giao dịch thu/chi |
 | `monthly_budgets` | Ngân sách từng tháng |
+| `categories` | Danh mục thu/chi dùng chung |
+| `category_budgets` | Ngân sách từng danh mục theo tháng |
+| `debts` | Các khoản công nợ và trạng thái thanh toán |
 | `lottery_entries` | Bản ghi của sổ lô đề |
 | `lottery_limits` | Hạn mức sổ theo tháng |
 | `wallet_balances` | View tính số dư hiện tại của từng ví |
@@ -388,6 +403,24 @@ Supabase Auth + PostgreSQL
 Khi push commit mới lên nhánh `main`, Cloudflare Pages tự tạo deployment mới. PWA
 có thể còn giữ bundle cũ trong thời gian ngắn; đóng/mở lại app hoặc tải lại trang
 để nhận phiên bản mới.
+
+## Nâng cấp database production hiện tại
+
+Phiên bản chuyển sang mô hình **chỉ giao dịch làm thay đổi số dư** cần chạy một
+migration trên Supabase hiện có:
+
+1. Mở **Supabase Dashboard → SQL Editor → New query**.
+2. Mở file
+   [`supabase/migrations/20260724_transaction_only_balances.sql`](supabase/migrations/20260724_transaction_only_balances.sql).
+3. Sao chép toàn bộ nội dung, dán vào SQL Editor và chọn **Run**.
+4. Kết quả thành công hiển thị `Success. No rows returned`.
+5. Tải lại web/PWA.
+
+Migration tự chuyển số dư ban đầu cũ thành giao dịch **Khoản thu**, nên tiền đang
+có không bị mất. File chạy trong một transaction và có thể chạy lại an toàn vì
+sau lần đầu mọi `opening_balance` đã được đưa về `0`.
+
+Không sửa hoặc xoá thủ công dữ liệu trong các bảng trong lúc migration đang chạy.
 
 ## Chuyển sang Supabase sau
 

@@ -19,7 +19,7 @@ const makeWallet = (
 })
 
 describe('total wallet balance', () => {
-  it('sums current balances of active wallets', () => {
+  it('sums transaction balances of every wallet', () => {
     const wallets = [
       makeWallet('cash', 1_000_000),
       makeWallet('bank', 2_000_000),
@@ -33,14 +33,12 @@ describe('total wallet balance', () => {
     ).toBe(3_250_000)
   })
 
-  it('falls back to opening balance and excludes archived wallets', () => {
+  it('includes archived wallets and never adds legacy opening balances', () => {
     const wallets = [
       makeWallet('cash', 1_000_000),
       makeWallet('old', 5_000_000, true),
     ]
 
-    expect(calculateTotalWalletBalance(wallets, { old: 8_000_000 })).toBe(
-      1_000_000,
-    )
+    expect(calculateTotalWalletBalance(wallets, { old: 8_000_000 })).toBe(8_000_000)
   })
 })

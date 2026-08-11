@@ -24,7 +24,7 @@
   đài, thống kê lô đề và tổng hợp nhiều tháng.
 - Chỉ tải code Supabase khi thực sự cấu hình cloud; bản demo không còn phải parse
   SDK Supabase lúc khởi động.
-- Lazy-load bốn màn hình phụ và chỉ gọi API lô đề, hạn mức, ngân sách, xu hướng
+- Lazy-load năm màn hình phụ và chỉ gọi API lô đề, công nợ, hạn mức, ngân sách, xu hướng
   hoặc số dư ví khi tab tương ứng được mở.
 - Xu hướng nhiều tháng tái sử dụng giao dịch của tháng hiện tại, không tải trùng.
 - View `wallet_balances` tổng hợp số dư trong PostgreSQL; frontend không còn phải

@@ -8,6 +8,8 @@ export type Transaction = {
   amount: number
   category: string
   note: string | null
+  receipt_image?: string | null
+  receipt_attached?: boolean
   occurred_on: string
   created_at: string
   updated_at: string
@@ -19,6 +21,7 @@ export type TransactionInput = {
   amount: number
   category: string
   note: string
+  receipt_image: string | null
   occurred_on: string
 }
 

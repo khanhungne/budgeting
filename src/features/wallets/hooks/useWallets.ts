@@ -7,7 +7,7 @@ import {
 } from '../api/wallets'
 import type { Wallet, WalletInput } from '../types'
 
-export const useWallets = (userId: string, includeBalances = false) => {
+export const useWallets = (userId: string, includeBalances = false, enabled = true) => {
   const [wallets, setWallets] = useState<Wallet[]>([])
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [walletsLoading, setWalletsLoading] = useState(true)
@@ -18,7 +18,7 @@ export const useWallets = (userId: string, includeBalances = false) => {
 
   const refresh = useCallback(async () => {
     const requestId = ++requestIdRef.current
-    if (!userId) {
+    if (!userId || !enabled) {
       setWallets([])
       setBalances({})
       setWalletsLoading(false)
@@ -32,7 +32,7 @@ export const useWallets = (userId: string, includeBalances = false) => {
         setWallets(nextWallets)
         setBalances(
           Object.fromEntries(
-            nextWallets.map((wallet) => [wallet.id, Number(wallet.opening_balance)]),
+            nextWallets.map((wallet) => [wallet.id, 0]),
           ),
         )
       }
@@ -45,14 +45,14 @@ export const useWallets = (userId: string, includeBalances = false) => {
     } finally {
       if (requestId === requestIdRef.current) setWalletsLoading(false)
     }
-  }, [userId])
+  }, [enabled, userId])
 
   useEffect(() => {
     void refresh()
   }, [refresh])
 
   const refreshBalances = useCallback(async () => {
-    if (!userId || !includeBalances || wallets.length === 0) {
+    if (!userId || !enabled || !includeBalances || wallets.length === 0) {
       setBalancesLoading(false)
       return
     }
@@ -69,7 +69,7 @@ export const useWallets = (userId: string, includeBalances = false) => {
     } finally {
       if (requestId === requestIdRef.current) setBalancesLoading(false)
     }
-  }, [includeBalances, userId, wallets])
+  }, [enabled, includeBalances, userId, wallets])
 
   useEffect(() => {
     void refreshBalances()

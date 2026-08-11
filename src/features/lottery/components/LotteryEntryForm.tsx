@@ -5,9 +5,6 @@ import { Button } from '../../../components/ui/Button'
 import { currentDate } from '../../../lib/dates'
 import { formatVndInput, parseVndInput } from '../../../lib/format'
 import {
-  LOTTERY_REGION_LABELS,
-  LOTTERY_STATIONS,
-  LOTTERY_STATUS_LABELS,
   LOTTERY_TYPE_LABELS,
   normalizeLotteryNumbers,
 } from '../constants'
@@ -15,9 +12,10 @@ import type {
   LotteryEntry,
   LotteryEntryInput,
   LotteryPlayType,
-  LotteryRegion,
-  LotteryStatus,
+  LotteryMarket,
 } from '../types'
+import { getLotteryDrawTime, getLotteryStations, LOTTERY_MARKET_LABELS, marketToRegion } from '../lottery-schedule'
+import { NumberChip } from './NumberChip'
 
 type LotteryEntryFormProps = {
   open: boolean
@@ -30,15 +28,19 @@ type LotteryEntryFormProps = {
 
 const initialForm = (month: string): LotteryEntryInput => {
   const today = currentDate()
+  const drawDate = today.startsWith(month) ? today : `${month}-01`
   return {
     play_type: 'lo',
+    market: 'north',
     region: 'north',
-    station: 'Hà Nội',
+    station: getLotteryStations('north', drawDate)[0],
     numbers: [],
+    hit_numbers: [],
     stake: 0,
     payout: 0,
     status: 'pending',
-    draw_date: today.startsWith(month) ? today : `${month}-01`,
+    draw_date: drawDate,
+    draw_time: getLotteryDrawTime('north'),
     note: '',
   }
 }
@@ -62,13 +64,16 @@ export const LotteryEntryForm = ({
     if (editing) {
       setForm({
         play_type: editing.play_type,
+        market: editing.market ?? editing.region,
         region: editing.region,
         station: editing.station,
         numbers: editing.numbers,
+        hit_numbers: editing.hit_numbers ?? [],
         stake: Number(editing.stake),
         payout: Number(editing.payout),
         status: editing.status,
         draw_date: editing.draw_date,
+        draw_time: editing.draw_time ?? getLotteryDrawTime(editing.market ?? editing.region),
         note: editing.note ?? '',
       })
       setNumbersText(editing.numbers.join(', '))
@@ -85,9 +90,17 @@ export const LotteryEntryForm = ({
 
   if (!open) return null
 
-  const changeStatus = (status: LotteryStatus) => {
-    setForm((current) => ({ ...current, status, payout: status === 'won' ? current.payout : 0 }))
-    if (status !== 'won') setPayoutText('')
+  const stations = getLotteryStations(form.market, form.draw_date)
+  const needsStation = form.market === 'south' || form.market === 'central'
+
+  const changeMarket = (market: LotteryMarket) => {
+    const nextStations = getLotteryStations(market, form.draw_date)
+    setForm((current) => ({ ...current, market, region: marketToRegion(market), station: nextStations[0], draw_time: getLotteryDrawTime(market) }))
+  }
+
+  const changeDrawDate = (draw_date: string) => {
+    const nextStations = getLotteryStations(form.market, draw_date)
+    setForm((current) => ({ ...current, draw_date, station: current.market === 'south' || current.market === 'central' ? (nextStations.includes(current.station) ? current.station : '') : nextStations[0] }))
   }
 
   const submit = async (event: FormEvent) => {
@@ -115,7 +128,8 @@ export const LotteryEntryForm = ({
 
     setError(null)
     try {
-      await onSave({ ...form, numbers, stake, payout }, editing?.id)
+      const hitNumbers = form.hit_numbers.filter((number) => numbers.includes(number))
+      await onSave({ ...form, numbers, hit_numbers: hitNumbers, stake, payout }, editing?.id)
       onClose()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Không lưu được bản ghi.')
@@ -173,53 +187,26 @@ export const LotteryEntryForm = ({
           </fieldset>
 
           <fieldset>
-            <legend className="mb-2 text-sm font-bold text-slate-700">Miền</legend>
+            <legend className="mb-2 text-sm font-bold text-slate-700">Khu vực</legend>
             <div className="grid grid-cols-3 gap-2">
-              {(Object.entries(LOTTERY_REGION_LABELS) as [LotteryRegion, string][]).map(
-                ([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    onClick={() =>
-                      setForm((current) => ({
-                        ...current,
-                        region: value,
-                        station: LOTTERY_STATIONS[value][0],
-                      }))
-                    }
-                    className={`rounded-xl border py-3 text-xs font-black transition ${
-                      form.region === value
-                        ? 'border-violet-600 bg-violet-50 text-violet-800'
-                        : 'border-slate-200 bg-white text-slate-500'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ),
-              )}
+              {(Object.entries(LOTTERY_MARKET_LABELS) as [LotteryMarket, string][]).map(([value, label]) => (
+                <button type="button" key={value} onClick={() => changeMarket(value)} className={`rounded-xl border px-1 py-3 text-xs font-black transition ${form.market === value ? 'border-violet-600 bg-violet-50 text-violet-800' : 'border-slate-200 bg-white text-slate-500'}`}>
+                  {label}
+                </button>
+              ))}
             </div>
           </fieldset>
 
-          <label className="block">
-            <span className="mb-2 block text-sm font-bold text-slate-700">Đài</span>
-            <input
-              type="text"
-              list={`lottery-stations-${form.region}`}
-              required
-              maxLength={60}
-              value={form.station}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, station: event.target.value }))
-              }
-              placeholder="Chọn hoặc nhập tên đài"
-              className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 outline-none focus:border-violet-600"
-            />
-            <datalist id={`lottery-stations-${form.region}`}>
-              {LOTTERY_STATIONS[form.region].map((station) => (
-                <option key={station} value={station} />
-              ))}
-            </datalist>
-          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block"><span className="mb-2 block text-sm font-bold text-slate-700">Ngày quay</span><input type="date" required value={form.draw_date} onChange={(event) => changeDrawDate(event.target.value)} className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-violet-600" /></label>
+            <div><span className="mb-2 block text-sm font-bold text-slate-700">Giờ xổ</span><div className="flex h-14 items-center rounded-2xl bg-violet-50 px-4 text-sm font-black text-violet-800">Xổ lúc {form.draw_time}</div></div>
+          </div>
+
+          {needsStation ? (
+            <label className="block"><span className="mb-2 block text-sm font-bold text-slate-700">Đài theo lịch</span><select required value={form.station} onChange={(event) => setForm((current) => ({ ...current, station: event.target.value }))} className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 outline-none focus:border-violet-600"><option value="" disabled>Chọn đài</option>{stations.map((station) => <option key={station} value={station}>{station}</option>)}</select><span className="mt-1.5 block text-[11px] text-slate-400">Gợi ý đúng theo ngày quay đã chọn.</span></label>
+          ) : (
+            <div className="rounded-2xl bg-slate-50 px-4 py-3"><p className="text-[11px] font-bold text-slate-400">Đơn vị kết quả</p><p className="mt-1 text-sm font-black text-slate-700">{stations[0]}</p></div>
+          )}
 
           <label className="block">
             <span className="mb-2 block text-sm font-bold text-slate-700">Các số</span>
@@ -236,6 +223,7 @@ export const LotteryEntryForm = ({
               Tối đa 10 số, phân cách bằng dấu phẩy hoặc khoảng trắng.
             </span>
           </label>
+          {normalizeLotteryNumbers(numbersText).length > 0 && <div className="flex flex-wrap gap-2">{normalizeLotteryNumbers(numbersText).map((number) => <NumberChip key={number} number={number} />)}</div>}
 
           <label className="block">
             <span className="mb-2 block text-sm font-bold text-slate-700">Tổng tiền vào</span>
@@ -252,62 +240,7 @@ export const LotteryEntryForm = ({
             </span>
           </label>
 
-          <fieldset>
-            <legend className="mb-2 text-sm font-bold text-slate-700">Kết quả</legend>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.entries(LOTTERY_STATUS_LABELS) as [LotteryStatus, string][]).map(
-                ([value, label]) => (
-                  <button
-                    type="button"
-                    key={value}
-                    onClick={() => changeStatus(value)}
-                    className={`rounded-xl border px-2 py-3 text-xs font-black transition ${
-                      form.status === value
-                        ? value === 'won'
-                          ? 'border-emerald-600 bg-emerald-50 text-emerald-800'
-                          : value === 'lost'
-                            ? 'border-red-400 bg-red-50 text-red-700'
-                            : 'border-amber-500 bg-amber-50 text-amber-800'
-                        : 'border-slate-200 bg-white text-slate-500'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ),
-              )}
-            </div>
-          </fieldset>
-
-          {form.status === 'won' && (
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-slate-700">Tiền nhận</span>
-              <span className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 focus-within:border-emerald-600">
-                <input
-                  inputMode="numeric"
-                  required
-                  value={payoutText}
-                  onChange={(event) => setPayoutText(formatVndInput(event.target.value))}
-                  placeholder="Ví dụ: 7.000.000"
-                  className="h-14 min-w-0 flex-1 bg-transparent text-lg font-black text-slate-900 outline-none"
-                />
-                <span className="text-xs font-black text-slate-400">VND</span>
-              </span>
-            </label>
-          )}
-
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold text-slate-700">Ngày quay</span>
-              <input
-                type="date"
-                required
-                value={form.draw_date}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, draw_date: event.target.value }))
-                }
-                className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-violet-600"
-              />
-            </label>
             <label className="block">
               <span className="mb-2 block text-sm font-bold text-slate-700">Ghi chú</span>
               <input

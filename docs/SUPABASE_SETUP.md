@@ -18,8 +18,9 @@ frontend.
 2. Chọn **New query**.
 3. Mở file [`supabase/schema.sql`](../supabase/schema.sql), sao chép toàn bộ SQL.
 4. Dán vào SQL Editor và nhấn **Run**.
-5. Mở **Table Editor** và kiểm tra đã có năm bảng `wallets`, `transactions`,
-   `monthly_budgets`, `lottery_entries` và `lottery_limits`.
+5. Mở **Table Editor** và kiểm tra đã có tám bảng `wallets`, `transactions`,
+   `monthly_budgets`, `categories`, `category_budgets`, `debts`, `lottery_entries` và
+   `lottery_limits`.
 6. Mở **Database → Views** và kiểm tra có view `wallet_balances`.
 7. Mở phần policies của từng bảng và kiểm tra có đủ bốn policy `select`,
    `insert`, `update`, `delete`.
@@ -31,6 +32,37 @@ số nguyên VND.
 Nếu đã từng chạy phiên bản schema cũ, hãy chạy lại toàn bộ file mới. Script có
 phần nâng cấp idempotent để thêm index, view tổng hợp số dư và các constraint còn
 thiếu.
+
+### Thứ tự nâng cấp project production đang dùng
+
+Nếu không chạy lại toàn bộ `supabase/schema.sql`, hãy chạy lần lượt các migration sau trong
+SQL Editor, mỗi file phải báo thành công trước khi sang file tiếp theo:
+
+1. `20260724_transaction_only_balances.sql`
+2. `20260811_categories_receipts_debts.sql`
+3. `20260811_debt_flow.sql`
+4. `20260811_lazy_receipts.sql`
+5. `20260811_lottery_schedule_vip_hits.sql`
+6. `20260811_shared_category_relations.sql`
+
+Các migration có thể chạy lại an toàn và file cuối cùng yêu cầu giao dịch cùng ngân sách
+tham chiếu đến dữ liệu `categories` dùng chung. Không chạy nhiều file đồng thời ở các cửa
+sổ SQL Editor khác nhau.
+
+### Nâng cấp từ mô hình số dư ban đầu
+
+Project đã tồn tại có thể chạy riêng file
+[`supabase/migrations/20260724_transaction_only_balances.sql`](../supabase/migrations/20260724_transaction_only_balances.sql).
+Migration này:
+
+1. Chuyển mỗi `opening_balance` cũ thành một giao dịch **Khoản thu** đúng một lần.
+2. Đưa `opening_balance` của ví về `0`.
+3. Bắt buộc mọi giao dịch thuộc một ví.
+4. Tính số dư chỉ từ giao dịch thu/chi.
+5. Ngăn thao tác mới làm số dư ví âm hơn.
+
+Migration chạy trong một transaction; nếu có lỗi, toàn bộ thay đổi được rollback.
+Không chạy cả file migration và schema đồng thời trong hai cửa sổ SQL Editor.
 
 Ở giai đoạn MVP không cần làm một trang admin riêng. Supabase Dashboard dùng để
 quản trị kỹ thuật; không dùng service key trong frontend và không tạo policy cho

@@ -22,6 +22,8 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { getInitials } from '../lib/format'
 import { WalletManager } from '../features/wallets/components/WalletManager'
 import type { Wallet, WalletInput } from '../features/wallets/types'
+import { CategoryManager } from '../features/transactions/components/CategoryManager'
+import type { CategoryInput, StoredCategory } from '../features/transactions/api/categories'
 
 type AccountPageProps = {
   user: { email?: string }
@@ -35,6 +37,12 @@ type AccountPageProps = {
   walletsError: string | null
   onWalletSave: (input: WalletInput, editingId?: string) => Promise<void>
   onWalletToggle: (id: string, archived: boolean) => Promise<void>
+  categories: StoredCategory[]
+  categoriesLoading: boolean
+  categoriesSaving: boolean
+  categoriesError: string | null
+  onCategorySave: (input: CategoryInput, editingId?: string) => Promise<StoredCategory>
+  onCategoryRemove: (id: string) => Promise<void>
 }
 
 export const AccountPage = ({
@@ -49,6 +57,12 @@ export const AccountPage = ({
   walletsError,
   onWalletSave,
   onWalletToggle,
+  categories,
+  categoriesLoading,
+  categoriesSaving,
+  categoriesError,
+  onCategorySave,
+  onCategoryRemove,
 }: AccountPageProps) => {
   const { canInstall, installed, isIos, install } = usePwaInstall()
   const online = useOnlineStatus()
@@ -137,6 +151,15 @@ export const AccountPage = ({
         error={walletsError}
         onSave={onWalletSave}
         onToggleArchived={onWalletToggle}
+      />
+
+      <CategoryManager
+        categories={categories}
+        loading={categoriesLoading}
+        saving={categoriesSaving}
+        error={categoriesError}
+        onSave={onCategorySave}
+        onRemove={onCategoryRemove}
       />
 
       <section className="mt-5 rounded-[1.75rem] bg-emerald-950 p-5 text-white">

@@ -1,8 +1,8 @@
 import { formatCompactCurrency } from '../../../lib/format'
 import { getCategory } from '../constants'
-import type { Transaction } from '../types'
+import type { Category, Transaction } from '../types'
 
-export const CategoryBreakdown = ({ transactions }: { transactions: Transaction[] }) => {
+export const CategoryBreakdown = ({ transactions, categories = [] }: { transactions: Transaction[]; categories?: Category[] }) => {
   const groups = Object.entries(
     transactions
       .filter((transaction) => transaction.kind === 'expense')
@@ -24,7 +24,7 @@ export const CategoryBreakdown = ({ transactions }: { transactions: Transaction[
   return (
     <div className="space-y-4">
       {groups.map(([id, amount]) => {
-        const category = getCategory(id)
+        const category = getCategory(id, categories)
         return (
           <div key={id}>
             <div className="mb-2 flex items-center justify-between text-sm">

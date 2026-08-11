@@ -1,8 +1,8 @@
-import { Pencil, ReceiptText, Trash2 } from 'lucide-react'
-import { useMemo } from 'react'
+import { Image, Pencil, ReceiptText, Trash2, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { formatCurrency, formatDate } from '../../../lib/format'
 import { getCategory } from '../constants'
-import type { Transaction } from '../types'
+import type { Category, Transaction } from '../types'
 import type { Wallet } from '../../wallets/types'
 
 type TransactionListProps = {
@@ -14,6 +14,8 @@ type TransactionListProps = {
   emptyDescription?: string
   onEdit: (transaction: Transaction) => void
   onDelete: (transaction: Transaction) => void
+  onViewReceipt?: (transaction: Transaction) => Promise<string | null>
+  categories?: Category[]
 }
 
 export const TransactionList = ({
@@ -25,7 +27,10 @@ export const TransactionList = ({
   emptyDescription = 'Chạm nút dấu cộng để ghi khoản đầu tiên.',
   onEdit,
   onDelete,
+  onViewReceipt,
+  categories = [],
 }: TransactionListProps) => {
+  const [receipt, setReceipt] = useState<string | null>(null)
   const walletById = useMemo(
     () => new Map(wallets.map((wallet) => [wallet.id, wallet])),
     [wallets],
@@ -59,8 +64,14 @@ export const TransactionList = ({
 
   return (
     <div className="space-y-2">
+      {receipt && (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-950/80 p-5" onClick={() => setReceipt(null)}>
+          <button type="button" className="absolute right-5 top-5 grid size-11 place-items-center rounded-full bg-white text-slate-700" aria-label="Đóng ảnh"><X className="size-5" /></button>
+          <img src={receipt} alt="Ảnh hóa đơn" decoding="async" className="max-h-full max-w-full rounded-2xl object-contain" />
+        </div>
+      )}
       {visibleTransactions.map((transaction) => {
-        const category = getCategory(transaction.category)
+        const category = getCategory(transaction.category, categories)
         const wallet = transaction.wallet_id
           ? walletById.get(transaction.wallet_id)
           : undefined
@@ -96,6 +107,22 @@ export const TransactionList = ({
                 {formatCurrency(Number(transaction.amount))}
               </p>
               <div className="mt-1 flex justify-end gap-2">
+                {(transaction.receipt_attached || transaction.receipt_image) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (transaction.receipt_image) {
+                        setReceipt(transaction.receipt_image)
+                        return
+                      }
+                      void onViewReceipt?.(transaction).then(setReceipt)
+                    }}
+                    className="text-sky-500"
+                    aria-label="Xem ảnh hóa đơn"
+                  >
+                    <Image className="size-3.5" />
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onEdit(transaction)}

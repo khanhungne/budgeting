@@ -107,7 +107,8 @@ sau; muốn tự deploy theo mỗi commit thì nên chọn GitHub ngay từ đ�
 
 - URL production trả HTTPS và mở được trên mobile.
 - Đăng ký/đăng nhập, đăng xuất rồi đăng nhập lại thành công.
-- Tạo ví, giao dịch, ngân sách và bản ghi lô đề; refresh vẫn còn dữ liệu.
+- Tạo ví, danh mục, giao dịch, ngân sách tháng, ngân sách theo danh mục, công nợ và bản ghi
+  lô đề; refresh vẫn còn dữ liệu.
 - Tài khoản B không thấy dữ liệu tài khoản A.
 - Link xác nhận email và quên mật khẩu quay về đúng domain production.
 - DevTools không có lỗi console/network.

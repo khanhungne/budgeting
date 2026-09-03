@@ -49,6 +49,12 @@ alter table public.notification_preferences enable row level security;
 alter table public.push_subscriptions enable row level security;
 alter table public.notification_deliveries enable row level security;
 
+grant select, insert, update, delete on table public.notification_preferences to authenticated;
+grant select, delete on table public.push_subscriptions to authenticated;
+grant all privileges on table public.notification_preferences to service_role;
+grant all privileges on table public.push_subscriptions to service_role;
+grant all privileges on table public.notification_deliveries to service_role;
+
 drop policy if exists "notification_preferences_own" on public.notification_preferences;
 create policy "notification_preferences_own"
   on public.notification_preferences

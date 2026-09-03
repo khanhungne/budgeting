@@ -15,6 +15,10 @@ npx supabase link --project-ref yyvrrfzvhrvecchzzmyt
 npx supabase db push
 ```
 
+Nếu migration thông báo ngày `20260902` đã được chạy trước khi bản sửa quyền được cập
+nhật, chạy thêm
+[`supabase/migrations/20260903_notification_table_grants.sql`](../supabase/migrations/20260903_notification_table_grants.sql).
+
 ## 2. Cấu hình và deploy Edge Function
 
 Các VAPID keys và cron secret dành cho môi trường hiện tại đã được tạo trong file bị

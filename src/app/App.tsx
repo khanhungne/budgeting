@@ -14,10 +14,6 @@ import { TransactionForm } from '../features/transactions/components/Transaction
 import { fetchTransactionReceipt } from '../features/transactions/api/transactions'
 import { useTransactions } from '../features/transactions/hooks/useTransactions'
 import { useCategories } from '../features/transactions/hooks/useCategories'
-import {
-  useTransactionTrends,
-  type TrendMonths,
-} from '../features/transactions/hooks/useTransactionTrends'
 import type { Transaction } from '../features/transactions/types'
 import { calculateTotalWalletBalance } from '../features/wallets/balance'
 import { useWallets } from '../features/wallets/hooks/useWallets'
@@ -66,7 +62,6 @@ export const App = () => {
     () => new URLSearchParams(window.location.search).get('new') === '1',
   )
   const [editing, setEditing] = useState<Transaction | null>(null)
-  const [trendMonths, setTrendMonths] = useState<TrendMonths>(6)
 
   const demoMode = !isSupabaseConfigured
   const activeUser = demoMode ? DEMO_USER : user
@@ -88,13 +83,6 @@ export const App = () => {
     activeUser?.id ?? '',
     month,
     activeTab === 'lottery',
-  )
-  const trendState = useTransactionTrends(
-    activeUser?.id ?? '',
-    month,
-    trendMonths,
-    transactionState.transactions,
-    activeTab === 'statistics',
   )
   const totalWalletBalance = useMemo(
     () => calculateTotalWalletBalance(walletState.wallets, walletState.balances),
@@ -238,10 +226,6 @@ export const App = () => {
             transactions={transactionState.transactions}
             totals={transactionState.totals}
             loading={transactionState.loading}
-            trends={trendState.trends}
-            trendsLoading={trendState.loading}
-            trendMonths={trendMonths}
-            onTrendMonthsChange={setTrendMonths}
             onMonthChange={setMonth}
             categories={categoryState.categories}
           />
@@ -270,7 +254,6 @@ export const App = () => {
               void lotteryState.refresh()
               void lotteryLimitState.refresh()
               void walletState.refresh()
-              void trendState.refresh()
             }}
             wallets={walletState.wallets}
             walletBalances={walletState.balances}
@@ -304,7 +287,6 @@ export const App = () => {
         onSave={async (input, editingId) => {
           await transactionState.save(input, editingId)
           await walletState.refreshBalances()
-          if (activeTab === 'statistics') await trendState.refresh()
         }}
       />
       <PwaUpdateToast />

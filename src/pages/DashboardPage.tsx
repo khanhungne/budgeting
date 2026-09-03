@@ -1,9 +1,10 @@
-import { ArrowRight, WifiOff } from 'lucide-react'
+import { ArrowRight, PieChart, Sparkles, WifiOff } from 'lucide-react'
 import { BudgetCard } from '../features/budgets/components/BudgetCard'
 import { CategoryBudgetCard } from '../features/budgets/components/CategoryBudgetCard'
 import type { CategoryBudget } from '../features/budgets/categoryTypes'
 import type { MonthlyBudget } from '../features/budgets/types'
 import { CategoryBreakdown } from '../features/transactions/components/CategoryBreakdown'
+import { DashboardPulseCard } from '../features/transactions/components/DashboardPulseCard'
 import { SummaryCard } from '../features/transactions/components/SummaryCard'
 import { TransactionList } from '../features/transactions/components/TransactionList'
 import type { Category, Transaction } from '../features/transactions/types'
@@ -69,11 +70,16 @@ export const DashboardPage = ({
 }: DashboardPageProps) => {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
+  const todayLabel = new Intl.DateTimeFormat('vi-VN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+  }).format(new Date())
 
   return (
-    <div className="px-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
+    <div className="px-4 pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-5">
+      <header className="mb-6 flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-slate-400">{greeting},</p>
             {demoMode && (
@@ -82,11 +88,15 @@ export const DashboardPage = ({
               </span>
             )}
           </div>
-          <h1 className="mt-0.5 text-xl font-black text-slate-900">Hôm nay mình ổn chứ?</h1>
+          <h1 className="mt-0.5 truncate text-xl font-black text-slate-900">Tiền nong sao rồi ta?</h1>
+          <p className="mt-1 text-[11px] font-bold capitalize text-emerald-700/65">{todayLabel}</p>
         </div>
-        <span className="grid size-11 place-items-center rounded-2xl bg-[#dcebdc] text-sm font-black text-emerald-900">
-          {getInitials(user.email)}
-        </span>
+        <div className="relative shrink-0">
+          <span className="grid size-12 rotate-3 place-items-center rounded-[1.15rem] bg-[#dcebdc] text-sm font-black text-emerald-900 shadow-[0_6px_16px_rgba(26,72,59,0.1)]">
+            {getInitials(user.email)}
+          </span>
+          <span className="absolute -bottom-1 -left-1 grid size-5 -rotate-6 place-items-center rounded-full border-2 border-[#f5f7f2] bg-[#ffd477] text-[10px]">👋</span>
+        </div>
       </header>
 
       {error && (
@@ -106,6 +116,14 @@ export const DashboardPage = ({
         onMonthChange={onMonthChange}
       />
 
+      <DashboardPulseCard
+        month={month}
+        transactions={transactions}
+        expense={totals.expense}
+        budget={budget}
+        categories={customCategories}
+      />
+
       <BudgetCard
         budget={budget}
         expense={totals.expense}
@@ -113,6 +131,24 @@ export const DashboardPage = ({
         saving={budgetSaving}
         onSave={onBudgetSave}
       />
+
+      <section className="relative mt-5 overflow-hidden rounded-[1.75rem] bg-white p-5 shadow-[0_8px_30px_rgba(23,48,40,0.05)]">
+        <span className="pointer-events-none absolute -right-4 -top-8 size-24 rounded-full bg-violet-100/65" />
+        <div className="mb-5 flex items-center justify-between">
+          <div className="relative flex items-center gap-3">
+            <span className="grid size-10 -rotate-3 place-items-center rounded-2xl bg-violet-100 text-violet-700">
+              <PieChart className="size-5" />
+            </span>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-violet-700">
+                Bản đồ chi tiêu
+              </p>
+              <h2 className="mt-0.5 text-lg font-black text-slate-900">Miếng nào to nhất?</h2>
+            </div>
+          </div>
+        </div>
+        <CategoryBreakdown transactions={transactions} categories={customCategories} />
+      </section>
 
       <CategoryBudgetCard
         budgets={categoryBudgets}
@@ -125,25 +161,13 @@ export const DashboardPage = ({
         customCategories={customCategories}
       />
 
-      <section className="mt-7 rounded-[1.75rem] bg-white p-5 shadow-[0_8px_30px_rgba(23,48,40,0.05)]">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Phân bổ
-            </p>
-            <h2 className="mt-1 text-lg font-black text-slate-900">Chi theo danh mục</h2>
-          </div>
-        </div>
-        <CategoryBreakdown transactions={transactions} categories={customCategories} />
-      </section>
-
       <section className="mt-7">
         <div className="mb-4 flex items-end justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
-              Gần đây
+            <p className="flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.14em] text-emerald-700">
+              <Sparkles className="size-3.5" /> Vừa mới diễn ra
             </p>
-            <h2 className="mt-1 text-lg font-black text-slate-900">Giao dịch mới</h2>
+            <h2 className="mt-1 text-lg font-black text-slate-900">Nhật ký của ví</h2>
           </div>
           <button
             type="button"

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { AppShell, type AppTab } from '../components/layout/AppShell'
 import { PwaUpdateToast } from '../components/pwa/PwaUpdateToast'
 import { LoadingScreen } from '../components/ui/LoadingScreen'
@@ -23,6 +23,7 @@ import { calculateTotalWalletBalance } from '../features/wallets/balance'
 import { useWallets } from '../features/wallets/hooks/useWallets'
 import { currentMonth } from '../lib/dates'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { detachCurrentPushSubscription } from '../features/notifications/api/notifications'
 import { DashboardPage } from '../pages/DashboardPage'
 
 const AccountPage = lazy(() =>
@@ -52,9 +53,18 @@ const DEMO_USER = {
 
 export const App = () => {
   const { user, loading: authLoading, recoveryMode, signOut } = useAuth()
-  const [activeTab, setActiveTab] = useState<AppTab>('home')
+  const [activeTab, setActiveTab] = useState<AppTab>(() => {
+    const requested = new URLSearchParams(window.location.search).get('tab')
+    return ['home', 'transactions', 'debts', 'lottery', 'statistics', 'account'].includes(
+      requested ?? '',
+    )
+      ? (requested as AppTab)
+      : 'home'
+  })
   const [month, setMonth] = useState(currentMonth)
-  const [formOpen, setFormOpen] = useState(false)
+  const [formOpen, setFormOpen] = useState(
+    () => new URLSearchParams(window.location.search).get('new') === '1',
+  )
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [trendMonths, setTrendMonths] = useState<TrendMonths>(6)
 
@@ -90,6 +100,14 @@ export const App = () => {
     () => calculateTotalWalletBalance(walletState.wallets, walletState.balances),
     [walletState.balances, walletState.wallets],
   )
+
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (!url.searchParams.has('tab') && !url.searchParams.has('new')) return
+    url.searchParams.delete('tab')
+    url.searchParams.delete('new')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }, [])
 
   if (!demoMode && authLoading) return <LoadingScreen />
   if (!demoMode && recoveryMode) return <PasswordRecoveryScreen />
@@ -231,7 +249,17 @@ export const App = () => {
           <AccountPage
             user={activeUser}
             demoMode={demoMode}
-            onSignOut={demoMode ? undefined : signOut}
+            onSignOut={
+              demoMode
+                ? undefined
+                : async () => {
+                    try {
+                      await detachCurrentPushSubscription()
+                    } finally {
+                      await signOut()
+                    }
+                  }
+            }
             onDemoDataChanged={() => {
               void transactionState.refresh()
               void budgetState.refresh()

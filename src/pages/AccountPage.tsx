@@ -24,9 +24,10 @@ import { WalletManager } from '../features/wallets/components/WalletManager'
 import type { Wallet, WalletInput } from '../features/wallets/types'
 import { CategoryManager } from '../features/transactions/components/CategoryManager'
 import type { CategoryInput, StoredCategory } from '../features/transactions/api/categories'
+import { NotificationSettings } from '../features/notifications/components/NotificationSettings'
 
 type AccountPageProps = {
-  user: { email?: string }
+  user: { id?: string; email?: string }
   demoMode?: boolean
   onSignOut?: () => Promise<void>
   onDemoDataChanged?: () => void
@@ -197,6 +198,8 @@ export const AccountPage = ({
           </div>
         )}
       </section>
+
+      <NotificationSettings userId={user.id ?? ''} demoMode={demoMode} />
 
       {demoMode && (
         <>

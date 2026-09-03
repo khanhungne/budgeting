@@ -45,6 +45,7 @@ SQL Editor, mỗi file phải báo thành công trước khi sang file tiếp th
 5. `20260811_lazy_receipts.sql`
 6. `20260811_lottery_schedule_vip_hits.sql`
 7. `20260811_shared_category_relations.sql`
+8. `20260902_daily_push_notifications.sql`
 
 Các migration có thể chạy lại an toàn và file cuối cùng yêu cầu giao dịch cùng ngân sách
 tham chiếu đến dữ liệu `categories` dùng chung. Không chạy nhiều file đồng thời ở các cửa

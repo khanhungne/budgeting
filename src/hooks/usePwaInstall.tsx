@@ -23,9 +23,12 @@ const PwaInstallContext = createContext<PwaInstallValue | null>(null)
 
 export const PwaInstallProvider = ({ children }: PropsWithChildren) => {
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null)
-  const [installed, setInstalled] = useState(
-    () => window.matchMedia('(display-mode: standalone)').matches,
-  )
+  const [installed, setInstalled] = useState(() => {
+    const iosNavigator = navigator as Navigator & { standalone?: boolean }
+    return (
+      window.matchMedia('(display-mode: standalone)').matches || iosNavigator.standalone === true
+    )
+  })
 
   useEffect(() => {
     const capturePrompt = (event: Event) => {
@@ -45,7 +48,12 @@ export const PwaInstallProvider = ({ children }: PropsWithChildren) => {
     }
   }, [])
 
-  const isIos = useMemo(() => /iphone|ipad|ipod/i.test(window.navigator.userAgent), [])
+  const isIos = useMemo(
+    () =>
+      /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
+      (/macintosh/i.test(window.navigator.userAgent) && navigator.maxTouchPoints > 1),
+    [],
+  )
 
   const value = useMemo<PwaInstallValue>(
     () => ({

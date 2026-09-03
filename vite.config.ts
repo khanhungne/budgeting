@@ -19,9 +19,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
+        id: '/',
         name: 'Ví Nhỏ - Quản lý thu chi',
         short_name: 'Ví Nhỏ',
         description: 'Ứng dụng quản lý thu chi cá nhân đơn giản và riêng tư.',
@@ -58,35 +62,13 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
-        navigateFallback: '/index.html',
-        cleanupOutdatedCaches: true,
+      injectManifest: {
         globIgnores: [
           '**/AccountPage-*.js',
           '**/DebtsPage-*.js',
           '**/LotteryPage-*.js',
           '**/StatisticsPage-*.js',
           '**/TransactionsPage-*.js',
-        ],
-        runtimeCaching: [
-          {
-            urlPattern: /\/assets\/.*\.(?:js|css)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'lazy-assets',
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 30 * 24 * 60 * 60,
-              },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: 'NetworkOnly',
-            options: {
-              cacheName: 'supabase-network-only',
-            },
-          },
         ],
       },
     }),

@@ -438,6 +438,10 @@ Supabase. Dữ liệu demo hiện chưa tự chuyển vào cloud.
 Sau khi kết nối, đăng ký hai tài khoản khác nhau để kiểm tra RLS trước khi phát
 hành.
 
+## Thông báo Web Push
+
+Xem [hướng dẫn thiết lập thông báo Android/iPhone](docs/PUSH_NOTIFICATIONS_SETUP.md).
+
 ## Các lệnh
 
 ```powershell

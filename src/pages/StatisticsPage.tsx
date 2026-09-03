@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, CalendarDays, ReceiptText } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, CalendarDays, Scale, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { suggestedCalendarDate } from '../features/transactions/calendar'
 import { MonthSwitcher } from '../features/transactions/components/MonthSwitcher'
@@ -58,56 +58,67 @@ export const StatisticsPage = ({
   if (loading) {
     return (
       <div className="px-4 pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-5">
-        <div className="h-16 animate-pulse rounded-2xl bg-slate-100" />
-        <div className="mt-5 h-24 animate-pulse rounded-[1.75rem] bg-slate-100" />
-        <div className="mt-4 h-80 animate-pulse rounded-[1.75rem] bg-slate-100" />
+        <div className="h-16 animate-pulse rounded-xl bg-slate-100" />
+        <div className="mt-5 h-36 animate-pulse rounded-[1.5rem] bg-slate-100" />
+        <div className="mt-4 h-96 animate-pulse rounded-[1.5rem] bg-slate-100" />
       </div>
     )
   }
 
   return (
-    <div className="px-4 pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-5">
-      <header className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
-            Nhật ký theo ngày
+    <div className="cashflow-page px-4 pt-[max(1.5rem,env(safe-area-inset-top))] sm:px-5">
+      <header className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#35775d]">
+            <Sparkles className="size-3" /> Nhật ký tài khí
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900">
-            Lịch chi tiêu
+            Lịch dòng tiền
           </h1>
-          <p className="mt-1 text-xs text-slate-400">Chạm vào một ngày để mở sổ.</p>
+          <p className="mt-1 text-xs font-semibold text-slate-400">
+            Thu chi sáng rõ, tiền bạc có nhịp.
+          </p>
         </div>
-        <span className="grid size-11 rotate-3 place-items-center rounded-2xl bg-amber-100 text-2xl shadow-sm">
-          🗓️
+
+        <span className="wealth-seal" aria-label="Tụ tài">
+          <b>₫</b>
+          <i>TỤ TÀI</i>
         </span>
       </header>
 
-      <section className="mb-4 rounded-[1.5rem] bg-white p-3 shadow-[0_6px_22px_rgba(23,48,40,0.04)]">
-        <div className="rounded-2xl bg-slate-50 px-1 py-0.5">
-          <MonthSwitcher month={month} onChange={onMonthChange} />
-        </div>
-        <div className="mt-3 grid grid-cols-3 divide-x divide-slate-100">
-          <div className="min-w-0 px-2">
-            <p className="text-[9px] font-black uppercase text-emerald-600">Tổng thu</p>
-            <p className="mt-1 truncate text-xs font-black text-slate-800">
-              {formatCompactCurrency(totals.income)}
-            </p>
-          </div>
-          <div className="min-w-0 px-2">
-            <p className="text-[9px] font-black uppercase text-red-500">Tổng chi</p>
-            <p className="mt-1 truncate text-xs font-black text-slate-800">
-              {formatCompactCurrency(totals.expense)}
-            </p>
-          </div>
-          <div className="min-w-0 px-2">
-            <p className="text-[9px] font-black uppercase text-slate-400">Chênh lệch</p>
-            <p
-              className={`mt-1 truncate text-xs font-black ${
-                totals.balance < 0 ? 'text-red-600' : 'text-emerald-800'
-              }`}
-            >
-              {formatCompactCurrency(totals.balance)}
-            </p>
+      <section className="cashflow-month-panel mb-4 overflow-hidden rounded-[1.4rem] bg-[#153f35] p-4 text-white shadow-[0_14px_32px_rgba(21,63,53,0.18)]">
+        <div className="relative z-10">
+          <MonthSwitcher month={month} onChange={onMonthChange} variant="dark" />
+
+          <div className="mt-4 grid grid-cols-3 divide-x divide-white/10 border-t border-white/10 pt-3">
+            <div className="min-w-0 pr-2">
+              <p className="text-[9px] font-black uppercase tracking-wide text-[#95d7ad]">
+                Dương · Thu
+              </p>
+              <p className="mt-1 truncate text-xs font-black text-white">
+                {formatCompactCurrency(totals.income)}
+              </p>
+            </div>
+            <div className="min-w-0 px-2">
+              <p className="text-[9px] font-black uppercase tracking-wide text-[#ffb18a]">
+                Âm · Chi
+              </p>
+              <p className="mt-1 truncate text-xs font-black text-white">
+                {formatCompactCurrency(totals.expense)}
+              </p>
+            </div>
+            <div className="min-w-0 pl-2">
+              <p className="text-[9px] font-black uppercase tracking-wide text-[#e7c36c]">
+                Thế cân bằng
+              </p>
+              <p
+                className={`mt-1 truncate text-xs font-black ${
+                  totals.balance < 0 ? 'text-[#ffb18a]' : 'text-[#ffe09a]'
+                }`}
+              >
+                {formatCompactCurrency(totals.balance)}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -120,42 +131,49 @@ export const StatisticsPage = ({
         onSelectDate={(date) => setManualSelection({ month, date })}
       />
 
-      <section className="mt-4 overflow-hidden rounded-[1.75rem] bg-white shadow-[0_8px_26px_rgba(23,48,40,0.05)]">
-        <div className="border-b border-slate-100 p-4">
+      <section
+        id="daily-cashbook"
+        aria-live="polite"
+        className="mt-4 overflow-hidden rounded-[1.5rem] border border-[#e8e1d2] bg-white shadow-[0_8px_26px_rgba(23,48,40,0.05)]"
+      >
+        <div className="border-b border-[#eee8dc] p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-sky-50 text-sky-700">
+              <span className="grid size-10 shrink-0 -rotate-2 place-items-center rounded-lg border border-[#b8d9cf] bg-[#edf7f2] text-[#286c58] shadow-[3px_3px_0_#cfe3d8]">
                 <CalendarDays className="size-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-                  Sổ trong ngày
+                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#9b7a34]">
+                  Sổ tiền trong ngày
                 </p>
                 <h2 className="mt-0.5 truncate text-base font-black text-slate-900">
                   {formatDate(selectedDate)}
                 </h2>
               </div>
             </div>
-            <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black text-slate-500">
+            <span className="shrink-0 rounded-md border border-slate-200 bg-[#f8f8f3] px-2.5 py-1 text-[10px] font-black text-slate-500">
               {selectedTransactions.length} khoản
             </span>
           </div>
 
           {selectedTransactions.length > 0 && (
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-emerald-50 px-3 py-2">
-                <p className="flex items-center gap-1 text-[9px] font-black uppercase text-emerald-600">
-                  <ArrowDownLeft className="size-3" /> Thu vào
+            <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-stretch overflow-hidden rounded-lg border border-slate-100 bg-[#fafaf6]">
+              <div className="min-w-0 px-3 py-2.5">
+                <p className="flex items-center gap-1 text-[9px] font-black uppercase text-emerald-700">
+                  <ArrowDownLeft className="size-3" /> Dương · Thu
                 </p>
                 <p className="mt-1 truncate text-xs font-black text-emerald-800">
                   {formatCurrency(selectedTotals.income)}
                 </p>
               </div>
-              <div className="rounded-xl bg-red-50 px-3 py-2">
-                <p className="flex items-center gap-1 text-[9px] font-black uppercase text-red-500">
-                  <ArrowUpRight className="size-3" /> Chi ra
+              <span className="grid w-8 place-items-center border-x border-slate-100 bg-white text-[#b18b3d]">
+                <Scale className="size-3.5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 px-3 py-2.5 text-right">
+                <p className="flex items-center justify-end gap-1 text-[9px] font-black uppercase text-[#bf5b3d]">
+                  Âm · Chi <ArrowUpRight className="size-3" />
                 </p>
-                <p className="mt-1 truncate text-xs font-black text-red-700">
+                <p className="mt-1 truncate text-xs font-black text-[#a84e34]">
                   {formatCurrency(selectedTotals.expense)}
                 </p>
               </div>
@@ -171,12 +189,13 @@ export const StatisticsPage = ({
               return (
                 <article
                   key={transaction.id}
-                  className={`flex items-center gap-3 px-4 py-3.5 ${
-                    index ? 'border-t border-slate-100' : ''
+                  className={`flex items-center gap-3 border-l-[3px] px-4 py-3.5 ${
+                    index ? 'border-t border-t-slate-100' : ''
                   }`}
+                  style={{ borderLeftColor: category.color }}
                 >
                   <span
-                    className="grid size-11 shrink-0 place-items-center rounded-2xl text-xl"
+                    className="grid size-10 shrink-0 -rotate-1 place-items-center rounded-lg border border-white text-xl shadow-[2px_2px_0_rgba(30,50,42,0.08)]"
                     style={{ backgroundColor: `${category.color}18` }}
                   >
                     {category.emoji}
@@ -191,10 +210,11 @@ export const StatisticsPage = ({
                   </div>
                   <p
                     className={`shrink-0 text-xs font-black ${
-                      income ? 'text-emerald-700' : 'text-red-600'
+                      income ? 'text-emerald-700' : 'text-[#bd5639]'
                     }`}
                   >
-                    {income ? '+' : '−'}{formatCurrency(Number(transaction.amount))}
+                    {income ? '+' : '−'}
+                    {formatCurrency(Number(transaction.amount))}
                   </p>
                 </article>
               )
@@ -202,19 +222,16 @@ export const StatisticsPage = ({
           </div>
         ) : (
           <div className="px-6 py-9 text-center">
-            <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-emerald-50 text-2xl">
+            <span className="mx-auto grid size-12 -rotate-2 place-items-center rounded-lg border border-emerald-100 bg-emerald-50 text-2xl shadow-[3px_3px_0_#d7ebdf]">
               🍃
             </span>
-            <p className="mt-3 text-sm font-black text-slate-700">Ngày này chưa có giao dịch</p>
-            <p className="mt-1 text-xs text-slate-400">Chọn một ngày có icon để xem chi tiết.</p>
+            <p className="mt-3 text-sm font-black text-slate-700">Ngày tĩnh, chưa có dòng tiền</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Chọn ngày có dấu màu để mở chi tiết.
+            </p>
           </div>
         )}
       </section>
-
-      <div className="mt-4 flex items-center gap-2 rounded-2xl bg-amber-50 px-4 py-3 text-[11px] font-semibold leading-5 text-amber-900/70">
-        <ReceiptText className="size-4 shrink-0" />
-        Ngày có nhiều khoản chi sẽ hiện số ngay trong ô lịch.
-      </div>
     </div>
   )
 }

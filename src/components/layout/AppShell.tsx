@@ -20,7 +20,7 @@ type AppShellProps = PropsWithChildren<{
 const items = [
   { id: 'home' as const, label: 'Tổng quan', icon: Home },
   { id: 'transactions' as const, label: 'Giao dịch', icon: List },
-  { id: 'statistics' as const, label: 'Thống kê', icon: BarChart3 },
+  { id: 'statistics' as const, label: 'Dòng tiền', icon: BarChart3 },
   { id: 'debts' as const, label: 'Công nợ', icon: HandCoins },
   { id: 'lottery' as const, label: 'Lô đề', icon: TicketCheck },
   { id: 'account' as const, label: 'Tài khoản', icon: CircleUserRound },
@@ -32,7 +32,10 @@ export const AppShell = ({ children, activeTab, onTabChange, onAdd }: AppShellPr
       {children}
     </div>
 
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg border-t border-slate-100 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(33,59,50,0.08)] backdrop-blur-lg">
+    <nav
+      aria-label="Điều hướng chính"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-lg border-t border-slate-100 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-10px_30px_rgba(33,59,50,0.08)] backdrop-blur-lg"
+    >
       {(activeTab === 'home' || activeTab === 'transactions') && <button
         type="button"
         onClick={onAdd}
@@ -48,6 +51,7 @@ export const AppShell = ({ children, activeTab, onTabChange, onAdd }: AppShellPr
             key={id}
             type="button"
             onClick={() => onTabChange(id)}
+            aria-current={activeTab === id ? 'page' : undefined}
             className={`flex h-full min-w-0 flex-col items-center justify-center gap-1 px-0.5 text-[9px] font-bold transition ${
               activeTab === id ? 'text-emerald-900' : 'text-slate-400'
             }`}

@@ -1,6 +1,5 @@
 import { ArrowRight, PieChart, Sparkles, WifiOff } from 'lucide-react'
-import { BudgetCard } from '../features/budgets/components/BudgetCard'
-import { CategoryBudgetCard } from '../features/budgets/components/CategoryBudgetCard'
+import { SpendingPlanCard } from '../features/budgets/components/SpendingPlanCard'
 import type { CategoryBudget } from '../features/budgets/categoryTypes'
 import type { MonthlyBudget } from '../features/budgets/types'
 import { CategoryBreakdown } from '../features/transactions/components/CategoryBreakdown'
@@ -116,12 +115,20 @@ export const DashboardPage = ({
         onMonthChange={onMonthChange}
       />
 
-      <BudgetCard
+      <SpendingPlanCard
         budget={budget}
         expense={totals.expense}
-        loading={budgetLoading}
-        saving={budgetSaving}
-        onSave={onBudgetSave}
+        budgetLoading={budgetLoading}
+        budgetSaving={budgetSaving}
+        onBudgetSave={onBudgetSave}
+        categoryBudgets={categoryBudgets}
+        transactions={transactions}
+        categoryBudgetsLoading={categoryBudgetsLoading}
+        categoryBudgetsSaving={categoryBudgetsSaving}
+        categoryBudgetsError={categoryBudgetsError}
+        onCategoryBudgetSave={onCategoryBudgetSave}
+        onCategoryBudgetRemove={onCategoryBudgetRemove}
+        categories={customCategories}
       />
 
       <CurrentBalanceCard
@@ -177,16 +184,6 @@ export const DashboardPage = ({
         />
       </section>
 
-      <CategoryBudgetCard
-        budgets={categoryBudgets}
-        transactions={transactions}
-        loading={categoryBudgetsLoading}
-        saving={categoryBudgetsSaving}
-        error={categoryBudgetsError}
-        onSave={onCategoryBudgetSave}
-        onRemove={(id) => onCategoryBudgetRemove(id).catch(() => undefined)}
-        customCategories={customCategories}
-      />
     </div>
   )
 }

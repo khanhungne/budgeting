@@ -5,6 +5,7 @@ import { formatCurrency, formatVndInput, parseVndInput } from '../../lib/format'
 type LimitTone = 'amber' | 'violet'
 
 type MonthlyLimitCardProps = {
+  embedded?: boolean
   amount: number
   used: number
   loading: boolean
@@ -64,6 +65,7 @@ const TONE_STYLES: Record<
 }
 
 export const MonthlyLimitCard = ({
+  embedded = false,
   amount,
   used,
   loading,
@@ -117,13 +119,19 @@ export const MonthlyLimitCard = ({
   if (loading) {
     return (
       <div
-        className={`mt-5 h-32 animate-pulse rounded-[1.75rem] ${styles.loading}`}
+        className={`${embedded ? 'h-32 rounded-[1.35rem]' : 'mt-5 h-32 rounded-[1.75rem]'} animate-pulse ${styles.loading}`}
       />
     )
   }
 
   return (
-    <section className={`mt-5 rounded-[1.75rem] p-5 ${styles.section}`}>
+    <section
+      className={`${
+        embedded
+          ? 'rounded-[1.35rem] p-4 shadow-none'
+          : 'mt-5 rounded-[1.75rem] p-5'
+      } ${styles.section}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className={`grid size-11 place-items-center rounded-2xl ${styles.icon}`}>

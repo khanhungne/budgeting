@@ -3,6 +3,7 @@ import { MonthlyLimitCard } from '../../../components/ui/MonthlyLimitCard'
 import type { MonthlyBudget } from '../types'
 
 type BudgetCardProps = {
+  embedded?: boolean
   budget: MonthlyBudget | null
   expense: number
   loading: boolean
@@ -11,6 +12,7 @@ type BudgetCardProps = {
 }
 
 export const BudgetCard = ({
+  embedded = false,
   budget,
   expense,
   loading,
@@ -18,6 +20,7 @@ export const BudgetCard = ({
   onSave,
 }: BudgetCardProps) => (
   <MonthlyLimitCard
+    embedded={embedded}
     amount={Number(budget?.amount ?? 0)}
     used={expense}
     loading={loading}

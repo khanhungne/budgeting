@@ -113,7 +113,7 @@ Deno.serve(async (request) => {
       }
 
       const result = await sendToUser(data.user.id, {
-        title: 'Ví Nhỏ',
+        title: 'Ví Nhỏ đã sẵn sàng ✨',
         body: 'Thông báo đang hoạt động trên thiết bị của bạn.',
         url: '/?tab=transactions&new=1',
         tag: `test-${Date.now()}`,
@@ -136,8 +136,8 @@ Deno.serve(async (request) => {
     let failed = 0
     for (const reminder of (claimed ?? []) as ClaimedReminder[]) {
       const result = await sendToUser(reminder.user_id, {
-        title: 'Ví Nhỏ',
-        body: 'Bạn đã ghi lại thu chi hôm nay chưa?',
+        title: 'Hãy thống kê lại hôm nay bạn đã chi tiêu như nào',
+        body: 'Mở Ví Nhỏ để xem lại các khoản thu chi trong ngày nhé.',
         url: '/?tab=transactions&new=1',
         tag: `daily-reminder-${reminder.delivery_date}`,
       })

@@ -1,27 +1,37 @@
-import { ArrowLeft, Check, ChevronRight, HandCoins, LoaderCircle, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, Check, ChevronRight, HandCoins, Layers3, LoaderCircle, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { currentDate } from '../lib/dates'
 import { formatCurrency, formatDate, formatVndInput, parseVndInput } from '../lib/format'
-import type { Debt, DebtInput, DebtStatus } from '../features/debts/types'
+import { DebtPeopleOverview } from '../features/debts/components/DebtPeopleOverview'
+import type { Debt, DebtDirection, DebtInput, DebtStatus } from '../features/debts/types'
 
 type Props = { debts: Debt[]; loading: boolean; saving: boolean; error: string | null; totals: { i_owe: number; owed_to_me: number }; onSave: (input: DebtInput, editingId?: string) => Promise<Debt>; onStatus: (id: string, status: DebtStatus) => Promise<void>; onRemove: (id: string) => Promise<void> }
 type Tab = 'pending' | 'paid'
+type DirectionFilter = 'all' | DebtDirection
 const emptyForm = (): DebtInput => ({ person: '', amount: 0, direction: 'i_owe', occurred_on: currentDate(), due_on: null, note: '' })
 const overdueDays = (debt: Debt) => debt.status === 'pending' && debt.due_on && debt.due_on < currentDate() ? Math.max(1, Math.floor((new Date(`${currentDate()}T00:00:00`).getTime() - new Date(`${debt.due_on}T00:00:00`).getTime()) / 86_400_000)) : 0
 
 export const DebtsPage = ({ debts, loading, saving, error, totals, onSave, onStatus, onRemove }: Props) => {
   const [tab, setTab] = useState<Tab>('pending')
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>('all')
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Debt | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Debt | null>(null)
-  const visible = useMemo(() => debts.filter((item) => item.status === tab && item.person.toLocaleLowerCase('vi').includes(query.trim().toLocaleLowerCase('vi'))).sort((a, b) => {
+  const visible = useMemo(() => debts.filter((item) => item.status === tab && (directionFilter === 'all' || item.direction === directionFilter) && (!selectedPerson || item.person.trim().toLocaleLowerCase('vi') === selectedPerson.trim().toLocaleLowerCase('vi')) && item.person.toLocaleLowerCase('vi').includes(query.trim().toLocaleLowerCase('vi'))).sort((a, b) => {
     if (tab === 'paid') return (b.paid_on ?? '').localeCompare(a.paid_on ?? '')
     if (a.due_on && b.due_on) return a.due_on.localeCompare(b.due_on)
     if (a.due_on) return -1
     if (b.due_on) return 1
     return b.occurred_on.localeCompare(a.occurred_on)
-  }), [debts, query, tab])
+  }), [debts, directionFilter, query, selectedPerson, tab])
+  const selectPerson = (person: string) => {
+    setSelectedPerson((current) => current === person ? null : person)
+    setDirectionFilter('i_owe')
+    setTab('pending')
+    setQuery('')
+  }
   const openCreate = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (debt: Debt) => { setEditing(debt); setSelected(null); setFormOpen(true) }
   const updateStatus = async (debt: Debt, status: DebtStatus) => {
@@ -38,7 +48,19 @@ export const DebtsPage = ({ debts, loading, saving, error, totals, onSave, onSta
     <header><p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Theo dõi nghĩa vụ tiền</p><h1 className="mt-1 text-3xl font-black text-slate-900">Nợ</h1></header>
     {error && <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{error}</p>}
     <div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-2xl bg-red-50 p-4"><p className="text-xs font-bold text-red-600">Tôi nợ</p><p className="mt-2 truncate text-lg font-black text-red-700">{formatCurrency(totals.i_owe)}</p></div><div className="rounded-2xl bg-emerald-50 p-4"><p className="text-xs font-bold text-emerald-600">Nợ tôi</p><p className="mt-2 truncate text-lg font-black text-emerald-700">{formatCurrency(totals.owed_to_me)}</p></div></div>
-    <div className="mt-5 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">{([['pending','Đang nợ'],['paid','Đã hoàn tất']] as const).map(([value,label]) => <button key={value} type="button" onClick={() => setTab(value)} className={`rounded-xl py-3 text-xs font-black ${tab === value ? 'bg-white text-emerald-900 shadow-sm' : 'text-slate-400'}`}>{label}</button>)}</div>
+    {tab === 'pending' && <DebtPeopleOverview debts={debts} selectedPerson={selectedPerson} onSelect={selectPerson} />}
+    <div className="mt-5 grid grid-cols-2 rounded-2xl bg-slate-100 p-1">{([['pending','Đang nợ'],['paid','Đã hoàn tất']] as const).map(([value,label]) => <button key={value} type="button" onClick={() => { setTab(value); if (value === 'paid') setSelectedPerson(null) }} className={`rounded-xl py-3 text-xs font-black ${tab === value ? 'bg-white text-emerald-900 shadow-sm' : 'text-slate-400'}`}>{label}</button>)}</div>
+    <section className="mt-3 rounded-2xl bg-white p-2">
+      <p className="flex items-center gap-1 px-2 pb-2 pt-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400"><Layers3 className="size-3" /> Phân loại công nợ</p>
+      <div className="grid grid-cols-3 gap-1">
+        {([
+          ['all', 'Tất cả', Layers3],
+          ['i_owe', 'Nợ ai', ArrowUpRight],
+          ['owed_to_me', 'Ai nợ mình', ArrowDownLeft],
+        ] as const).map(([value, label, Icon]) => <button key={value} type="button" onClick={() => { setDirectionFilter(value); if (value !== 'i_owe') setSelectedPerson(null) }} className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-black transition ${directionFilter === value ? value === 'i_owe' ? 'bg-red-50 text-red-700' : value === 'owed_to_me' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800' : 'text-slate-400'}`}><Icon className="size-4" />{label}</button>)}
+      </div>
+      {selectedPerson && <button type="button" onClick={() => setSelectedPerson(null)} className="mx-2 mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-black text-amber-800">🐣 {selectedPerson}<X className="size-3" /></button>}
+    </section>
     <label className="mt-3 flex h-11 items-center gap-2 rounded-2xl bg-white px-3"><Search className="size-4 text-slate-400" /><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên..." className="min-w-0 flex-1 bg-transparent text-sm outline-none" />{query && <button type="button" onClick={() => setQuery('')}><X className="size-4 text-slate-400" /></button>}</label>
     {loading ? <div className="mt-4 h-44 animate-pulse rounded-2xl bg-slate-100" /> : visible.length ? <div className="mt-4 overflow-hidden rounded-[1.5rem] bg-white">{visible.map((debt, index) => { const overdue = overdueDays(debt); return <button key={debt.id} type="button" onClick={() => setSelected(debt)} className={`flex w-full items-center gap-3 p-4 text-left ${index ? 'border-t border-slate-100' : ''}`}><span className={`grid size-11 shrink-0 place-items-center rounded-2xl ${debt.direction === 'i_owe' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}><HandCoins className="size-5" /></span><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-2"><p className="truncate font-black text-slate-800">{debt.person}</p><p className="whitespace-nowrap text-sm font-black text-slate-800">{formatCurrency(Number(debt.amount))}</p></div><p className="mt-1 text-xs text-slate-400">{debt.direction === 'i_owe' ? 'Tôi nợ' : 'Nợ tôi'}</p><p className={`mt-1 text-[11px] font-bold ${overdue ? 'text-red-600' : 'text-slate-400'}`}>{debt.status === 'paid' ? `Đã thanh toán${debt.paid_on ? ` · ${formatDate(debt.paid_on)}` : ''}` : overdue ? `Quá hạn ${overdue} ngày` : debt.due_on ? `Hạn trả: ${formatDate(debt.due_on)}` : 'Không có ngày hạn trả'}</p></div><ChevronRight className="size-4 shrink-0 text-slate-300" /></button>})}</div> : <div className="mt-5 rounded-[1.75rem] border border-dashed border-slate-200 bg-white px-6 py-10 text-center"><span className="mx-auto grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-700"><HandCoins /></span><p className="mt-3 font-black text-slate-800">{query ? 'Không tìm thấy khoản nợ' : tab === 'pending' ? 'Không có khoản nợ nào' : 'Chưa có lịch sử hoàn tất'}</p><p className="mt-1 text-sm leading-5 text-slate-400">Các khoản bạn nợ hoặc người khác nợ bạn sẽ xuất hiện ở đây.</p>{tab === 'pending' && !query && <button type="button" onClick={openCreate} className="mt-4 rounded-xl bg-emerald-900 px-4 py-3 text-xs font-black text-white">+ Thêm khoản nợ</button>}</div>}
     <button type="button" onClick={openCreate} className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-[max(1.25rem,calc((100vw-32rem)/2+1.25rem))] z-30 grid size-14 place-items-center rounded-2xl bg-emerald-900 text-white shadow-xl" aria-label="Thêm khoản nợ"><Plus className="size-6" /></button>

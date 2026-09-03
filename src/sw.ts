@@ -49,14 +49,19 @@ self.addEventListener('push', (event) => {
   }
 
   const options: NotificationOptions = {
-    body: payload.body || 'Bạn đã ghi lại thu chi hôm nay chưa?',
+    body: payload.body || 'Mở Ví Nhỏ để xem lại các khoản thu chi trong ngày nhé.',
     icon: '/pwa-192x192.png',
     badge: '/pwa-64x64.png',
     tag: payload.tag || 'vi-nho-reminder',
     data: { url: payload.url || '/?tab=transactions&new=1' },
   }
 
-  event.waitUntil(self.registration.showNotification(payload.title || 'Ví Nhỏ', options))
+  event.waitUntil(
+    self.registration.showNotification(
+      payload.title || 'Hãy thống kê lại hôm nay bạn đã chi tiêu như nào',
+      options,
+    ),
+  )
 })
 
 self.addEventListener('notificationclick', (event) => {

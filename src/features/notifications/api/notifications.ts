@@ -118,7 +118,19 @@ export const sendTestNotification = async () => {
   const { data, error } = await client.functions.invoke('send-notifications', {
     body: { mode: 'test' },
   })
-  if (error) throwApiError(error)
+  if (error) {
+    let detail = error.message
+    const context = (error as { context?: unknown }).context
+    if (context instanceof Response) {
+      try {
+        const payload = (await context.clone().json()) as { error?: string; message?: string }
+        detail = payload.error || payload.message || detail
+      } catch {
+        // Keep the SDK error when the function did not return JSON.
+      }
+    }
+    throw new Error(detail)
+  }
   if (!data?.ok) throw new Error(data?.error || 'Không gửi được thông báo thử.')
   return Number(data.sent ?? 0)
 }

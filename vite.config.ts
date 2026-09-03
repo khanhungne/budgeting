@@ -23,7 +23,12 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon-180x180.png'],
+      includeAssets: [
+        'favicon.ico',
+        'favicon.svg',
+        'apple-touch-icon-180x180.png',
+        'assets/money-tree-3d.webp',
+      ],
       manifest: {
         id: '/',
         name: 'Ví Nhỏ - Quản lý thu chi',

@@ -50,17 +50,20 @@ export const CurrentBalanceCard = ({
       </span>
 
       <span
-        className={`dashboard-note-stack -mr-1 shrink-0 ${
-          totalBalance < 0 ? 'dashboard-note-stack--negative' : ''
+        className={`dashboard-prosperity-tree ${
+          totalBalance < 0 ? 'dashboard-prosperity-tree--muted' : ''
         }`}
         aria-hidden="true"
       >
-        <span className="dashboard-note-stack__back" />
-        <span className="dashboard-note-stack__middle" />
-        <span className="dashboard-note-stack__front">
-          <b>₫</b>
-          <i>VÍ NHỎ</i>
-        </span>
+        <img
+          src="/assets/money-tree-3d.webp"
+          alt=""
+          width="512"
+          height="512"
+          decoding="async"
+          fetchPriority="high"
+          draggable={false}
+        />
       </span>
     </button>
 

@@ -85,18 +85,6 @@ export const CategoryBreakdown = ({ transactions, categories = [] }: { transacti
           ))}
         </div>
       </div>
-
-      <div className="mt-5 flex items-center gap-3 rounded-2xl bg-[#fff4dc] p-3.5">
-        <span className="text-xl">🏆</span>
-        <p className="min-w-0 text-xs leading-5 text-amber-950/70">
-          Chiếm sóng nhiều nhất là{' '}
-          <strong className="font-black text-amber-950">{chartGroups[0].label}</strong>, khoảng{' '}
-          <strong className="font-black text-amber-950">
-            {Math.round((chartGroups[0].amount / total) * 100)}%
-          </strong>{' '}
-          tổng chi.
-        </p>
-      </div>
     </div>
   )
 }

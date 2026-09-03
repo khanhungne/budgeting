@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, Scale, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, TrendingDown, TrendingUp } from 'lucide-react'
 import { formatCurrency } from '../../../lib/format'
 import { MonthSwitcher } from './MonthSwitcher'
 
@@ -21,68 +21,41 @@ export const SummaryCard = ({
   const TrendIcon = isPositive ? TrendingUp : TrendingDown
 
   return (
-    <section className="relative overflow-hidden rounded-[2rem] bg-[#123d34] p-5 text-white shadow-[0_22px_50px_rgba(17,63,54,0.24)]">
-      <span className="pointer-events-none absolute -right-4 -top-12 size-36 rounded-full bg-[#f5bd58]" />
-      <span className="pointer-events-none absolute right-24 top-20 size-4 rotate-12 rounded-sm bg-[#ee8f68]" />
-      <span className="pointer-events-none absolute right-5 top-24 size-2.5 rounded-full bg-sky-300" />
-
-      <div className="relative rounded-2xl bg-black/10 px-1 py-0.5">
+    <section className="rounded-[1.75rem] bg-white p-4 shadow-[0_8px_26px_rgba(23,48,40,0.05)]">
+      <div className="rounded-2xl bg-slate-50 px-1 py-0.5">
         <MonthSwitcher month={month} onChange={onMonthChange} />
       </div>
 
-      <div className="relative my-6 flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 flex items-center gap-2 text-emerald-100/70">
-            <Scale className="size-4" />
-            <span className="text-[11px] font-black uppercase tracking-[0.15em]">
-              Kết quả của tháng
-            </span>
-          </div>
-          <p className="truncate text-[2rem] font-black tracking-tight">
-            {isPositive ? '+' : '−'}{formatCurrency(Math.abs(monthlyBalance))}
-          </p>
-          <p className="mt-1 text-[11px] font-semibold text-emerald-100/50">
-            Tổng thu trừ tổng chi trong tháng đang chọn
-          </p>
-        </div>
-        <div className={`dashboard-money-scene shrink-0 ${isPositive ? '' : 'dashboard-money-scene--negative'}`} aria-hidden="true">
-          <span className="dashboard-money-coin dashboard-money-coin--back">₫</span>
-          <span className="dashboard-money-coin dashboard-money-coin--front">₫</span>
-          <span className="dashboard-wallet-3d">
-            <i className="dashboard-wallet-3d__shine" />
-            <b>₫</b>
-          </span>
-        </div>
+      <div className="px-1 pb-4 pt-5">
+        <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+          <TrendIcon className={`size-4 ${isPositive ? 'text-emerald-600' : 'text-red-500'}`} />
+          Chênh lệch thu chi
+        </p>
+        <p
+          className={`mt-1.5 truncate text-3xl font-black tracking-tight ${
+            isPositive ? 'text-emerald-800' : 'text-red-600'
+          }`}
+        >
+          {isPositive ? '+' : '−'}{formatCurrency(Math.abs(monthlyBalance))}
+        </p>
       </div>
 
-      <div className={`relative mb-3 flex items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5 ${isPositive ? 'bg-emerald-300/12' : 'bg-orange-300/12'}`}>
-        <span className="flex items-center gap-2 text-xs font-semibold text-emerald-100/70">
-          <TrendIcon className={`size-4 ${isPositive ? 'text-emerald-300' : 'text-orange-300'}`} />
-          {isPositive ? 'Tháng này đang dư' : 'Tháng này đang âm'}
-        </span>
-        <span className={`whitespace-nowrap text-[10px] font-black uppercase tracking-wide ${isPositive ? 'text-emerald-200' : 'text-orange-200'}`}>
-          Theo tháng
-        </span>
-      </div>
-
-      <div className="relative grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-white/10 p-3.5 backdrop-blur-sm">
-          <div className="mb-2 flex items-center gap-2 text-emerald-100/70">
-            <span className="grid size-7 place-items-center rounded-full bg-emerald-300/15">
-              <ArrowDownLeft className="size-4 text-emerald-200" />
-            </span>
-            <span className="text-xs font-semibold">Tiền ghé vào</span>
-          </div>
-          <p className="truncate text-sm font-extrabold">{formatCurrency(income)}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-2xl bg-emerald-50 p-3.5">
+          <p className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+            <ArrowDownLeft className="size-4" /> Tổng thu
+          </p>
+          <p className="mt-2 truncate text-sm font-black text-slate-800">
+            {formatCurrency(income)}
+          </p>
         </div>
-        <div className="rounded-2xl bg-white/10 p-3.5 backdrop-blur-sm">
-          <div className="mb-2 flex items-center gap-2 text-emerald-100/70">
-            <span className="grid size-7 place-items-center rounded-full bg-orange-300/15">
-              <ArrowUpRight className="size-4 text-orange-200" />
-            </span>
-            <span className="text-xs font-semibold">Tiền chạy ra</span>
-          </div>
-          <p className="truncate text-sm font-extrabold">{formatCurrency(expense)}</p>
+        <div className="rounded-2xl bg-red-50 p-3.5">
+          <p className="flex items-center gap-1.5 text-xs font-bold text-red-600">
+            <ArrowUpRight className="size-4" /> Tổng chi
+          </p>
+          <p className="mt-2 truncate text-sm font-black text-slate-800">
+            {formatCurrency(expense)}
+          </p>
         </div>
       </div>
     </section>

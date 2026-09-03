@@ -183,6 +183,7 @@ export const App = () => {
             onCategoryBudgetRemove={categoryBudgetState.remove}
             customCategories={categoryState.categories}
             onViewAll={() => setActiveTab('transactions')}
+            onViewAssets={() => setActiveTab('account')}
             onEdit={(transaction) => void openEdit(transaction)}
             onDelete={(transaction) => void confirmDelete(transaction)}
             onViewReceipt={loadReceipt}

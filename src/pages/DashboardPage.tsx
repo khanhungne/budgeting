@@ -4,10 +4,10 @@ import { CategoryBudgetCard } from '../features/budgets/components/CategoryBudge
 import type { CategoryBudget } from '../features/budgets/categoryTypes'
 import type { MonthlyBudget } from '../features/budgets/types'
 import { CategoryBreakdown } from '../features/transactions/components/CategoryBreakdown'
-import { DashboardPulseCard } from '../features/transactions/components/DashboardPulseCard'
 import { SummaryCard } from '../features/transactions/components/SummaryCard'
 import { TransactionList } from '../features/transactions/components/TransactionList'
 import type { Category, Transaction } from '../features/transactions/types'
+import { CurrentBalanceCard } from '../features/wallets/components/CurrentBalanceCard'
 import type { Wallet } from '../features/wallets/types'
 import { getInitials } from '../lib/format'
 
@@ -35,6 +35,7 @@ type DashboardPageProps = {
   onCategoryBudgetRemove: (id: string) => Promise<void>
   customCategories: Category[]
   onViewAll: () => void
+  onViewAssets: () => void
   onEdit: (transaction: Transaction) => void
   onDelete: (transaction: Transaction) => void
   onViewReceipt: (transaction: Transaction) => Promise<string | null>
@@ -64,6 +65,7 @@ export const DashboardPage = ({
   onCategoryBudgetRemove,
   customCategories,
   onViewAll,
+  onViewAssets,
   onEdit,
   onDelete,
   onViewReceipt,
@@ -111,17 +113,14 @@ export const DashboardPage = ({
         income={totals.income}
         expense={totals.expense}
         monthlyBalance={totals.balance}
-        totalBalance={totalWalletBalance}
-        balanceLoading={walletBalanceLoading}
         onMonthChange={onMonthChange}
       />
 
-      <DashboardPulseCard
-        month={month}
-        transactions={transactions}
-        expense={totals.expense}
-        budget={budget}
-        categories={customCategories}
+      <CurrentBalanceCard
+        totalBalance={totalWalletBalance}
+        loading={walletBalanceLoading}
+        walletCount={wallets.length}
+        onViewDetails={onViewAssets}
       />
 
       <BudgetCard

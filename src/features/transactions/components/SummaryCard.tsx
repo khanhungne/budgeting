@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight, TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Scale, TrendingDown, TrendingUp } from 'lucide-react'
 import { formatCurrency } from '../../../lib/format'
 import { MonthSwitcher } from './MonthSwitcher'
 
@@ -7,8 +7,6 @@ type SummaryCardProps = {
   income: number
   expense: number
   monthlyBalance: number
-  totalBalance: number
-  balanceLoading: boolean
   onMonthChange: (month: string) => void
 }
 
@@ -17,12 +15,10 @@ export const SummaryCard = ({
   income,
   expense,
   monthlyBalance,
-  totalBalance,
-  balanceLoading,
   onMonthChange,
 }: SummaryCardProps) => {
-  const isGrowing = monthlyBalance >= 0
-  const TrendIcon = isGrowing ? TrendingUp : TrendingDown
+  const isPositive = monthlyBalance >= 0
+  const TrendIcon = isPositive ? TrendingUp : TrendingDown
 
   return (
     <section className="relative overflow-hidden rounded-[2rem] bg-[#123d34] p-5 text-white shadow-[0_22px_50px_rgba(17,63,54,0.24)]">
@@ -37,30 +33,30 @@ export const SummaryCard = ({
       <div className="relative my-6 flex items-end justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex items-center gap-2 text-emerald-100/70">
-            <Wallet className="size-4" />
+            <Scale className="size-4" />
             <span className="text-[11px] font-black uppercase tracking-[0.15em]">
-              Ví của mình đang có
+              Kết quả của tháng
             </span>
           </div>
-          <p
-            className="truncate text-[2rem] font-black tracking-tight"
-            aria-busy={balanceLoading}
-          >
-            {balanceLoading ? 'Đang tính…' : formatCurrency(totalBalance)}
+          <p className="truncate text-[2rem] font-black tracking-tight">
+            {isPositive ? '+' : '−'}{formatCurrency(Math.abs(monthlyBalance))}
+          </p>
+          <p className="mt-1 text-[11px] font-semibold text-emerald-100/50">
+            Tổng thu trừ tổng chi trong tháng đang chọn
           </p>
         </div>
         <span className="grid size-14 shrink-0 rotate-6 place-items-center rounded-[1.25rem] bg-[#ffd477] text-3xl shadow-[0_8px_20px_rgba(0,0,0,0.15)]">
-          🐷
+          {isPositive ? '🌱' : '🪫'}
         </span>
       </div>
 
-      <div className={`relative mb-3 flex items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5 ${isGrowing ? 'bg-emerald-300/12' : 'bg-orange-300/12'}`}>
+      <div className={`relative mb-3 flex items-center justify-between gap-3 rounded-2xl px-3.5 py-2.5 ${isPositive ? 'bg-emerald-300/12' : 'bg-orange-300/12'}`}>
         <span className="flex items-center gap-2 text-xs font-semibold text-emerald-100/70">
-          <TrendIcon className={`size-4 ${isGrowing ? 'text-emerald-300' : 'text-orange-300'}`} />
-          {isGrowing ? 'Ví lớn thêm trong tháng' : 'Ví nhỏ đi trong tháng'}
+          <TrendIcon className={`size-4 ${isPositive ? 'text-emerald-300' : 'text-orange-300'}`} />
+          {isPositive ? 'Tháng này đang dư' : 'Tháng này đang âm'}
         </span>
-        <span className={`whitespace-nowrap text-sm font-extrabold ${isGrowing ? 'text-emerald-200' : 'text-orange-200'}`}>
-          {isGrowing ? '+' : '−'}{formatCurrency(Math.abs(monthlyBalance))}
+        <span className={`whitespace-nowrap text-[10px] font-black uppercase tracking-wide ${isPositive ? 'text-emerald-200' : 'text-orange-200'}`}>
+          Theo tháng
         </span>
       </div>
 

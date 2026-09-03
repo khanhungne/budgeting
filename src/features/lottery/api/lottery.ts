@@ -8,6 +8,28 @@ export const DEMO_LOTTERY_STORAGE_KEY = 'vi-nho.demo.lottery.v1'
 const LOTTERY_COLUMNS =
   'id,user_id,play_type,region,market,station,numbers,hit_numbers,stake,payout,status,draw_date,draw_time,note,result_updated_at,created_at,updated_at'
 
+type SupabaseErrorLike = { code?: string; message?: string; details?: string | null }
+
+export const lotteryError = (reason: unknown) => {
+  const error = reason as SupabaseErrorLike
+  if (error?.code === 'PGRST204' || error?.message?.includes('schema cache')) {
+    return new Error(
+      'Supabase chưa cập nhật đủ cột của sổ lô đề. Hãy chạy lại migration 20260811_lottery_schedule_vip_hits.sql.',
+    )
+  }
+  if (error?.code === '42501' || error?.message?.toLowerCase().includes('row-level security')) {
+    return new Error(
+      'Tài khoản chưa có quyền lưu sổ lô đề. Hãy chạy lại migration lô đề để cập nhật RLS.',
+    )
+  }
+  if (error?.code === '23514') {
+    return new Error(`Dữ liệu lô đề không hợp lệ với database: ${error.message ?? error.details ?? ''}`)
+  }
+  return reason instanceof Error
+    ? reason
+    : new Error(error?.message || 'Không lưu được bản ghi lô đề.')
+}
+
 const readDemoEntries = (): LotteryEntry[] => {
   return (readLocalArray<LotteryEntry>(DEMO_LOTTERY_STORAGE_KEY) ?? []).map(
     (entry) => ({
@@ -49,7 +71,7 @@ export const fetchLotteryEntries = async (userId: string, month: string) => {
     .order('draw_date', { ascending: false })
     .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (error) throw lotteryError(error)
   return (data ?? []) as LotteryEntry[]
 }
 
@@ -82,7 +104,7 @@ export const createLotteryEntry = async (userId: string, input: LotteryEntryInpu
     .select(LOTTERY_COLUMNS)
     .single()
 
-  if (error) throw error
+  if (error) throw lotteryError(error)
   return data as LotteryEntry
 }
 
@@ -116,7 +138,7 @@ export const updateLotteryEntry = async (id: string, input: LotteryEntryInput) =
     .select(LOTTERY_COLUMNS)
     .single()
 
-  if (error) throw error
+  if (error) throw lotteryError(error)
   return data as LotteryEntry
 }
 
@@ -128,5 +150,5 @@ export const removeLotteryEntry = async (id: string) => {
 
   const client = await getSupabaseClient()
   const { error } = await client.from('lottery_entries').delete().eq('id', id)
-  if (error) throw error
+  if (error) throw lotteryError(error)
 }

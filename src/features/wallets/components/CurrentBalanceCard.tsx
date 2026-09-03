@@ -26,8 +26,6 @@ export const CurrentBalanceCard = ({
   onViewDetails,
 }: CurrentBalanceCardProps) => (
   <section className="relative overflow-hidden rounded-[1.8rem] bg-[#123d34] p-4 text-white shadow-[0_18px_38px_rgba(17,63,54,0.18)]">
-    <span className="pointer-events-none absolute -right-12 -top-16 size-40 rounded-full bg-emerald-300/10" />
-
     <button
       type="button"
       onClick={onViewDetails}
@@ -52,16 +50,16 @@ export const CurrentBalanceCard = ({
       </span>
 
       <span
-        className={`dashboard-money-scene -mr-2 shrink-0 scale-[0.7] ${
-          totalBalance < 0 ? 'dashboard-money-scene--negative' : ''
+        className={`dashboard-note-stack -mr-1 shrink-0 ${
+          totalBalance < 0 ? 'dashboard-note-stack--negative' : ''
         }`}
         aria-hidden="true"
       >
-        <span className="dashboard-money-coin dashboard-money-coin--back">₫</span>
-        <span className="dashboard-money-coin dashboard-money-coin--front">₫</span>
-        <span className="dashboard-wallet-3d">
-          <i className="dashboard-wallet-3d__shine" />
+        <span className="dashboard-note-stack__back" />
+        <span className="dashboard-note-stack__middle" />
+        <span className="dashboard-note-stack__front">
           <b>₫</b>
+          <i>VÍ NHỎ</i>
         </span>
       </span>
     </button>
@@ -71,7 +69,7 @@ export const CurrentBalanceCard = ({
         <button
           type="button"
           onClick={() => onMonthChange(shiftMonth(month, -1))}
-          className="grid size-8 place-items-center rounded-full bg-white/10 text-emerald-100"
+          className="grid size-8 place-items-center rounded-lg border border-white/10 bg-white/8 text-emerald-100"
           aria-label="Tháng trước"
         >
           <ChevronLeft className="size-4" />
@@ -80,7 +78,7 @@ export const CurrentBalanceCard = ({
         <button
           type="button"
           onClick={() => onMonthChange(shiftMonth(month, 1))}
-          className="grid size-8 place-items-center rounded-full bg-white/10 text-emerald-100"
+          className="grid size-8 place-items-center rounded-lg border border-white/10 bg-white/8 text-emerald-100"
           aria-label="Tháng sau"
         >
           <ChevronRight className="size-4" />

@@ -79,3 +79,25 @@ export const saveMonthlyBudget = async (
   if (error) throw error
   return data as MonthlyBudget
 }
+
+export const deleteMonthlyBudget = async (userId: string, month: string) => {
+  const monthStart = `${month}-01`
+
+  if (!isSupabaseConfigured) {
+    writeDemoBudgets(
+      readDemoBudgets().filter(
+        (budget) => budget.user_id !== userId || budget.month_start !== monthStart,
+      ),
+    )
+    return
+  }
+
+  const client = await getSupabaseClient()
+  const { error } = await client
+    .from('monthly_budgets')
+    .delete()
+    .eq('user_id', userId)
+    .eq('month_start', monthStart)
+
+  if (error) throw error
+}

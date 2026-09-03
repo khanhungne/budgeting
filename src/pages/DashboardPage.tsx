@@ -24,6 +24,7 @@ type DashboardPageProps = {
   error: string | null
   onMonthChange: (month: string) => void
   onBudgetSave: (amount: number) => Promise<void>
+  onBudgetRemove: () => Promise<void>
   categoryBudgets: CategoryBudget[]
   categoryBudgetsLoading: boolean
   categoryBudgetsSaving: boolean
@@ -54,6 +55,7 @@ export const DashboardPage = ({
   error,
   onMonthChange,
   onBudgetSave,
+  onBudgetRemove,
   categoryBudgets,
   categoryBudgetsLoading,
   categoryBudgetsSaving,
@@ -82,7 +84,7 @@ export const DashboardPage = ({
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900">Tổng quan</h1>
             {demoMode && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-800">
+              <span className="rounded-md bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-800">
                 Demo
               </span>
             )}
@@ -121,6 +123,7 @@ export const DashboardPage = ({
         budgetLoading={budgetLoading}
         budgetSaving={budgetSaving}
         onBudgetSave={onBudgetSave}
+        onBudgetRemove={onBudgetRemove}
         categoryBudgets={categoryBudgets}
         transactions={transactions}
         categoryBudgetsLoading={categoryBudgetsLoading}

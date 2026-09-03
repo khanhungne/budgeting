@@ -20,10 +20,10 @@ type AppShellProps = PropsWithChildren<{
 const items = [
   { id: 'home' as const, label: 'Tổng quan', icon: Home },
   { id: 'transactions' as const, label: 'Giao dịch', icon: List },
-  { id: 'lottery' as const, label: 'Lô đề', icon: TicketCheck },
   { id: 'statistics' as const, label: 'Thống kê', icon: BarChart3 },
-  { id: 'account' as const, label: 'Tài khoản', icon: CircleUserRound },
   { id: 'debts' as const, label: 'Công nợ', icon: HandCoins },
+  { id: 'lottery' as const, label: 'Lô đề', icon: TicketCheck },
+  { id: 'account' as const, label: 'Tài khoản', icon: CircleUserRound },
 ]
 
 export const AppShell = ({ children, activeTab, onTabChange, onAdd }: AppShellProps) => (

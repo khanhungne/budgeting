@@ -163,6 +163,7 @@ export const App = () => {
             error={transactionState.error}
             onMonthChange={setMonth}
             onBudgetSave={budgetState.save}
+            onBudgetRemove={budgetState.remove}
             categoryBudgets={categoryBudgetState.budgets}
             categoryBudgetsLoading={categoryBudgetState.loading}
             categoryBudgetsSaving={categoryBudgetState.saving}

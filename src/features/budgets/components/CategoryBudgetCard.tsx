@@ -31,6 +31,7 @@ export const CategoryBudgetCard = ({
   const [adding, setAdding] = useState(false)
   const [category, setCategory] = useState('food')
   const [amount, setAmount] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
 
   const options = useMemo(() => {
     const ids = new Set(
@@ -56,14 +57,19 @@ export const CategoryBudgetCard = ({
   const edit = (budget: CategoryBudget) => {
     setCategory(budget.category)
     setAmount(formatVndInput(Number(budget.amount)))
+    setFormError(null)
     setAdding(true)
   }
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     const parsed = parseVndInput(amount)
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) return
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      setFormError('Hạn mức phải lớn hơn 0 và không được quá lớn.')
+      return
+    }
     try {
+      setFormError(null)
       await onSave(category, parsed)
       setAmount('')
       setAdding(false)
@@ -102,7 +108,10 @@ export const CategoryBudgetCard = ({
         </div>
         <button
           type="button"
-          onClick={() => setAdding((value) => !value)}
+          onClick={() => {
+            setAdding((value) => !value)
+            setFormError(null)
+          }}
           className={`grid size-9 shrink-0 place-items-center rounded-xl ${
             adding ? 'bg-slate-100 text-slate-500' : 'bg-sky-50 text-sky-700'
           }`}
@@ -113,32 +122,58 @@ export const CategoryBudgetCard = ({
       </div>
 
       {adding && (
-        <form onSubmit={submit} className="mt-4 grid grid-cols-[1fr_auto] gap-2">
-          <select
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className="col-span-2 h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"
-          >
-            {options.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.emoji} {item.label}
-              </option>
+        <form onSubmit={submit} className="mt-4 rounded-xl border border-sky-100 bg-sky-50/60 p-3">
+          <label className="block">
+            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-sky-700">Danh mục muốn nhắc</span>
+            <select
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="h-12 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700"
+            >
+              {options.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.emoji} {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-sky-700">Số tiền giới hạn</span>
+            <span className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 focus-within:border-sky-500">
+              <b className="text-base text-slate-400">₫</b>
+              <input
+                required
+                inputMode="numeric"
+                value={amount}
+                onChange={(event) => setAmount(formatVndInput(event.target.value))}
+                placeholder="Ví dụ: 1.000.000"
+                className="h-12 min-w-0 bg-transparent text-sm font-black text-slate-900 outline-none placeholder:font-semibold placeholder:text-slate-300"
+              />
+              <span className="border-l border-slate-100 pl-2 text-[9px] font-black text-slate-400">VND</span>
+            </span>
+          </label>
+
+          <div className="mt-2 grid grid-cols-4 gap-1.5">
+            {[500_000, 1_000_000, 2_000_000, 3_000_000].map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setAmount(formatVndInput(value))}
+                className="rounded-lg border border-slate-200 bg-white px-1 py-2 text-[9px] font-black text-slate-500"
+              >
+                {formatCurrency(value).replace(/\s?₫/, '')}
+              </button>
             ))}
-          </select>
-          <input
-            required
-            inputMode="numeric"
-            value={amount}
-            onChange={(event) => setAmount(formatVndInput(event.target.value))}
-            placeholder="Hạn mức VND"
-            className="h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold"
-          />
+          </div>
+
+          {formError && <p className="mt-2 text-[11px] font-semibold text-red-600">{formError}</p>}
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-sky-700 px-4 text-xs font-black text-white disabled:opacity-50"
+            className="mt-3 h-11 w-full rounded-lg bg-sky-700 px-4 text-xs font-black text-white disabled:opacity-50"
           >
-            Lưu
+            {saving ? 'Đang lưu…' : 'Lưu hạn mức danh mục'}
           </button>
         </form>
       )}
@@ -152,7 +187,8 @@ export const CategoryBudgetCard = ({
             const spent = spentByCategory.get(budget.category) ?? 0
             const limit = Number(budget.amount)
             const remaining = limit - spent
-            const ratio = Math.min(100, (spent / limit) * 100)
+            const ratio = (spent / limit) * 100
+            const filledSegments = Math.min(8, Math.ceil(ratio / 12.5))
             const exceeded = remaining < 0
 
             return (
@@ -186,11 +222,19 @@ export const CategoryBudgetCard = ({
                   </div>
                 </div>
                 <div className="mt-2.5 flex items-center justify-between gap-2">
-                  <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-200/70">
-                    <div
-                      className={`h-full rounded-full ${exceeded ? 'bg-red-500' : 'bg-sky-500'}`}
-                      style={{ width: `${ratio}%` }}
-                    />
+                  <div className="grid min-w-0 flex-1 grid-cols-8 gap-1" role="progressbar" aria-valuenow={Math.round(ratio)}>
+                    {Array.from({ length: 8 }, (_, index) => (
+                      <i
+                        key={index}
+                        className={`h-1.5 rounded-[2px] ${
+                          index < filledSegments
+                            ? exceeded
+                              ? 'bg-red-500'
+                              : 'bg-sky-500'
+                            : 'bg-slate-200/70'
+                        }`}
+                      />
+                    ))}
                   </div>
                   <span className={`whitespace-nowrap text-[10px] font-black ${exceeded ? 'text-red-600' : 'text-slate-400'}`}>
                     {exceeded

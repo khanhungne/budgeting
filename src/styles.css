@@ -62,129 +62,91 @@ input[type="date"] {
   min-height: 3.5rem;
 }
 
-.dashboard-money-scene {
+.dashboard-note-stack {
   position: relative;
-  width: 5.25rem;
-  height: 5rem;
+  width: 4.75rem;
+  height: 4.15rem;
   perspective: 420px;
   transform-style: preserve-3d;
 }
 
-.dashboard-wallet-3d {
+.dashboard-note-stack__back,
+.dashboard-note-stack__middle,
+.dashboard-note-stack__front {
   position: absolute;
-  right: 0.2rem;
-  bottom: 0.35rem;
-  display: grid;
-  width: 4.1rem;
-  height: 2.85rem;
-  place-items: center;
-  border: 1px solid rgb(255 255 255 / 38%);
-  border-radius: 0.95rem;
-  color: #74420d;
-  background: linear-gradient(145deg, #ffe49a 5%, #ffc24f 54%, #e98e2d 100%);
-  box-shadow:
-    0.42rem 0.5rem 0 #b96222,
-    0.65rem 0.9rem 1.15rem rgb(3 22 17 / 34%);
-  transform: rotateX(9deg) rotateY(-16deg) rotateZ(-3deg);
-  transform-style: preserve-3d;
-  animation: dashboard-wallet-float 4s ease-in-out infinite;
-}
-
-.dashboard-wallet-3d::before {
-  position: absolute;
-  inset: 0.35rem 0.45rem;
-  border: 1px solid rgb(128 70 9 / 13%);
-  border-radius: 0.65rem;
-  background: rgb(255 255 255 / 13%);
-  content: "";
-  transform: translateZ(0.4rem);
-}
-
-.dashboard-wallet-3d b {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  width: 1.7rem;
-  height: 1.55rem;
-  place-items: center;
+  display: block;
+  width: 3.75rem;
+  height: 2.65rem;
   border-radius: 0.55rem;
-  font-size: 0.9rem;
+}
+
+.dashboard-note-stack__back {
+  right: 0.1rem;
+  top: 0.25rem;
+  border: 1px solid rgb(255 255 255 / 34%);
+  background: #63a98f;
+  transform: rotate(9deg) translateZ(-0.4rem);
+}
+
+.dashboard-note-stack__middle {
+  left: 0.3rem;
+  top: 0.65rem;
+  border: 1px solid rgb(255 255 255 / 42%);
+  background: #f6c75d;
+  box-shadow: 0.25rem 0.3rem 0 #ad6723;
+  transform: rotate(-7deg) translateZ(0.2rem);
+}
+
+.dashboard-note-stack__front {
+  right: 0.15rem;
+  bottom: 0.15rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.55rem 0.65rem;
+  color: #6c3f0a;
+  background: linear-gradient(145deg, #fff0ba, #f3ad38);
+  box-shadow:
+    0.3rem 0.35rem 0 #b86722,
+    0.55rem 0.7rem 1rem rgb(2 25 18 / 28%);
+  transform: rotateY(-12deg) rotateZ(3deg) translateZ(0.65rem);
+  animation: dashboard-note-float 4s ease-in-out infinite;
+}
+
+.dashboard-note-stack__front::after {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-left: 0.8rem solid transparent;
+  border-bottom: 0.8rem solid #db8a27;
+  content: "";
+}
+
+.dashboard-note-stack__front b {
+  font-size: 1rem;
   line-height: 1;
-  background: #fff2c4;
-  box-shadow:
-    0 0.2rem 0 #d9912f,
-    0 0.35rem 0.6rem rgb(111 60 9 / 20%);
-  transform: translateZ(0.75rem);
 }
 
-.dashboard-wallet-3d__shine {
-  position: absolute;
-  left: 0.65rem;
-  top: 0.55rem;
-  width: 1.65rem;
-  height: 0.35rem;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 48%);
-  transform: rotate(-8deg) translateZ(0.55rem);
-}
-
-.dashboard-money-coin {
-  position: absolute;
-  z-index: 3;
-  display: grid;
-  width: 1.65rem;
-  height: 1.65rem;
-  place-items: center;
-  border: 0.16rem solid #ffe39a;
-  border-radius: 50%;
-  color: #8a4e0e;
-  font-size: 0.65rem;
+.dashboard-note-stack__front i {
+  font-size: 0.42rem;
+  font-style: normal;
   font-weight: 900;
-  background: linear-gradient(145deg, #ffd979, #eba03c);
-  box-shadow:
-    0 0.28rem 0 #b96922,
-    0 0.55rem 0.7rem rgb(2 25 18 / 25%);
+  letter-spacing: 0.16em;
 }
 
-.dashboard-money-coin--back {
-  right: 0.65rem;
-  top: 0.05rem;
-  transform: rotate(15deg) rotateY(-18deg);
-  animation: dashboard-coin-pop 3.6s ease-in-out infinite;
+.dashboard-note-stack--negative {
+  filter: saturate(0.65);
 }
 
-.dashboard-money-coin--front {
-  left: 0.15rem;
-  top: 1.05rem;
-  transform: rotate(-14deg) rotateY(18deg) scale(0.82);
-  animation: dashboard-coin-pop 3.6s 0.35s ease-in-out infinite;
-}
-
-.dashboard-money-scene--negative .dashboard-wallet-3d {
-  filter: saturate(0.7);
-}
-
-.dashboard-money-scene--negative .dashboard-money-coin--back {
-  transform: rotate(15deg) translateY(0.55rem) scale(0.82);
-}
-
-@keyframes dashboard-wallet-float {
+@keyframes dashboard-note-float {
   0%,
   100% {
-    transform: rotateX(9deg) rotateY(-16deg) rotateZ(-3deg) translateY(0);
+    margin-top: 0.05rem;
   }
   50% {
-    transform: rotateX(9deg) rotateY(-16deg) rotateZ(-3deg) translateY(-0.22rem);
-  }
-}
-
-@keyframes dashboard-coin-pop {
-  0%,
-  100% {
-    margin-top: 0;
-  }
-  50% {
-    margin-top: -0.2rem;
+    margin-top: -0.18rem;
   }
 }
 

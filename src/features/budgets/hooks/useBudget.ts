@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchMonthlyBudget, saveMonthlyBudget } from '../api/budgets'
+import { deleteMonthlyBudget, fetchMonthlyBudget, saveMonthlyBudget } from '../api/budgets'
 import type { MonthlyBudget } from '../types'
 
 export const useBudget = (userId: string, month: string, enabled = true) => {
@@ -51,5 +51,23 @@ export const useBudget = (userId: string, month: string, enabled = true) => {
     }
   }
 
-  return { budget, loading, saving, error, save, refresh }
+  const remove = async () => {
+    if (!userId) throw new Error('Chưa xác định được người dùng.')
+    requestIdRef.current += 1
+    setLoading(false)
+    setSaving(true)
+    setError(null)
+    try {
+      await deleteMonthlyBudget(userId, month)
+      setBudget(null)
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : 'Không xóa được ngân sách.'
+      setError(message)
+      throw reason
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return { budget, loading, saving, error, save, remove, refresh }
 }

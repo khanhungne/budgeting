@@ -15,6 +15,7 @@ type SpendingPlanCardProps = {
   budgetLoading: boolean
   budgetSaving: boolean
   onBudgetSave: (amount: number) => Promise<void>
+  onBudgetRemove: () => Promise<void>
   categoryBudgets: CategoryBudget[]
   transactions: Transaction[]
   categoryBudgetsLoading: boolean
@@ -31,6 +32,7 @@ export const SpendingPlanCard = ({
   budgetLoading,
   budgetSaving,
   onBudgetSave,
+  onBudgetRemove,
   categoryBudgets,
   transactions,
   categoryBudgetsLoading,
@@ -129,6 +131,7 @@ export const SpendingPlanCard = ({
             loading={budgetLoading}
             saving={budgetSaving}
             onSave={onBudgetSave}
+            onRemove={onBudgetRemove}
           />
 
           <CategoryBudgetCard

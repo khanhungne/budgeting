@@ -9,6 +9,7 @@ type BudgetCardProps = {
   loading: boolean
   saving: boolean
   onSave: (amount: number) => Promise<void>
+  onRemove: () => Promise<void>
 }
 
 export const BudgetCard = ({
@@ -18,6 +19,7 @@ export const BudgetCard = ({
   loading,
   saving,
   onSave,
+  onRemove,
 }: BudgetCardProps) => (
   <MonthlyLimitCard
     embedded={embedded}
@@ -33,6 +35,8 @@ export const BudgetCard = ({
     usageLabel="Đã chi"
     invalidMessage="Ngân sách VND không hợp lệ hoặc quá lớn."
     saveErrorMessage="Không lưu được ngân sách."
+    quickAmounts={[2_000_000, 5_000_000, 8_000_000, 10_000_000]}
     onSave={onSave}
+    onRemove={onRemove}
   />
 )

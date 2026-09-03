@@ -88,6 +88,7 @@ create table if not exists public.debts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   person text not null check (char_length(person) between 1 and 60),
+  avatar text not null default '🐣' check (char_length(btrim(avatar)) between 1 and 8),
   amount numeric(16, 0) not null check (amount between 1 and 9007199254740991),
   direction text not null check (direction in ('i_owe', 'owed_to_me')),
   status text not null default 'pending' check (status in ('pending', 'paid')),

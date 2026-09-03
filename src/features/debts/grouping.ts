@@ -1,7 +1,10 @@
-import type { Debt } from './types'
+import { normalizeDebtAvatar } from './avatars'
+import type { Debt, DebtDirection } from './types'
 
 export type DebtPersonSummary = {
   person: string
+  avatar: string
+  direction: DebtDirection
   total: number
   count: number
   overdueCount: number
@@ -10,17 +13,20 @@ export type DebtPersonSummary = {
 
 const personKey = (value: string) => value.trim().toLocaleLowerCase('vi')
 
-export const summarizePeopleIOwe = (
+export const summarizeDebtPeople = (
   debts: Debt[],
   today: string,
+  direction?: DebtDirection,
 ): DebtPersonSummary[] => {
   const groups = new Map<string, DebtPersonSummary>()
 
   for (const debt of debts) {
-    if (debt.status !== 'pending' || debt.direction !== 'i_owe') continue
-    const key = personKey(debt.person)
+    if (debt.status !== 'pending' || (direction && debt.direction !== direction)) continue
+    const key = `${debt.direction}:${personKey(debt.person)}`
     const current = groups.get(key) ?? {
       person: debt.person.trim(),
+      avatar: normalizeDebtAvatar(debt.avatar, debt.person),
+      direction: debt.direction,
       total: 0,
       count: 0,
       overdueCount: 0,
@@ -43,3 +49,6 @@ export const summarizePeopleIOwe = (
     return b.total - a.total
   })
 }
+
+export const summarizePeopleIOwe = (debts: Debt[], today: string) =>
+  summarizeDebtPeople(debts, today, 'i_owe')

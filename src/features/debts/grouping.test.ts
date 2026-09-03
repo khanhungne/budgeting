@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { Debt } from './types'
-import { summarizePeopleIOwe } from './grouping'
+import { summarizeDebtPeople, summarizePeopleIOwe } from './grouping'
 
 const debt = (overrides: Partial<Debt>): Debt => ({
   id: crypto.randomUUID(),
   user_id: 'user-1',
   person: 'An',
+  avatar: '🐼',
   amount: 100_000,
   direction: 'i_owe',
   status: 'pending',
@@ -33,6 +34,8 @@ describe('summarizePeopleIOwe', () => {
     expect(result).toEqual([
       {
         person: 'An',
+        avatar: '🐼',
+        direction: 'i_owe',
         total: 350_000,
         count: 2,
         overdueCount: 1,
@@ -52,5 +55,22 @@ describe('summarizePeopleIOwe', () => {
     )
 
     expect(result.map((item) => item.person)).toEqual(['An', 'Bình', 'Châu'])
+  })
+})
+
+describe('summarizeDebtPeople', () => {
+  it('keeps the two debt directions separate and carries the chosen avatar', () => {
+    const result = summarizeDebtPeople(
+      [
+        debt({ person: 'An', avatar: '🦊', amount: 100_000 }),
+        debt({ person: 'An', avatar: '🐸', amount: 300_000, direction: 'owed_to_me' }),
+      ],
+      '2026-09-03',
+    )
+
+    expect(result).toEqual([
+      expect.objectContaining({ person: 'An', avatar: '🐸', direction: 'owed_to_me', total: 300_000 }),
+      expect.objectContaining({ person: 'An', avatar: '🦊', direction: 'i_owe', total: 100_000 }),
+    ])
   })
 })

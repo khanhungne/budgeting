@@ -4,6 +4,7 @@ import type { MonthlyBudget } from '../budgets/types'
 import { DEMO_CATEGORY_BUDGET_STORAGE_KEY } from '../budgets/api/categoryBudgets'
 import type { CategoryBudget } from '../budgets/categoryTypes'
 import { DEMO_DEBT_STORAGE_KEY } from '../debts/api/debts'
+import { normalizeDebtAvatar } from '../debts/avatars'
 import type { Debt } from '../debts/types'
 import { DEMO_LOTTERY_STORAGE_KEY } from '../lottery/api/lottery'
 import { DEMO_LOTTERY_LIMIT_STORAGE_KEY } from '../lottery/api/limits'
@@ -367,6 +368,7 @@ export const importDemoBackup = async (file: File) => {
   const debts = backupDebts.map((item) => ({
     ...item,
     user_id: DEMO_USER_ID,
+    avatar: normalizeDebtAvatar(item.avatar, item.person),
     status: (item.status as string) === 'open' ? 'pending' as const : item.status,
     occurred_on: item.occurred_on ?? item.created_at?.slice(0, 10) ?? now.slice(0, 10),
     paid_on: item.paid_on ?? (item.status === 'paid' ? (item.updated_at || now).slice(0, 10) : null),

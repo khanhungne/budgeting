@@ -1,9 +1,7 @@
-import { ArrowRight, PieChart, WifiOff } from 'lucide-react'
+import { ArrowRight, WifiOff } from 'lucide-react'
 import type { CategoryBudget } from '../features/budgets/categoryTypes'
 import { SpendingPlanCard } from '../features/budgets/components/SpendingPlanCard'
 import type { MonthlyBudget } from '../features/budgets/types'
-import { CategoryBreakdown } from '../features/transactions/components/CategoryBreakdown'
-import { SummaryCard } from '../features/transactions/components/SummaryCard'
 import { TransactionList } from '../features/transactions/components/TransactionList'
 import type { Category, Transaction } from '../features/transactions/types'
 import { CurrentBalanceCard } from '../features/wallets/components/CurrentBalanceCard'
@@ -109,18 +107,13 @@ export const DashboardPage = ({
         totalBalance={totalWalletBalance}
         loading={walletBalanceLoading}
         walletCount={wallets.length}
+        month={month}
+        income={totals.income}
+        expense={totals.expense}
+        monthlyBalance={totals.balance}
+        onMonthChange={onMonthChange}
         onViewDetails={onViewAssets}
       />
-
-      <div className="mt-4">
-        <SummaryCard
-          month={month}
-          income={totals.income}
-          expense={totals.expense}
-          monthlyBalance={totals.balance}
-          onMonthChange={onMonthChange}
-        />
-      </div>
 
       <SpendingPlanCard
         budget={budget}
@@ -158,27 +151,12 @@ export const DashboardPage = ({
           transactions={transactions}
           wallets={wallets}
           loading={loading}
-          limit={4}
+          limit={3}
           onEdit={onEdit}
           onDelete={onDelete}
           onViewReceipt={onViewReceipt}
           categories={customCategories}
         />
-      </section>
-
-      <section className="mt-6 rounded-[1.75rem] bg-white p-5 shadow-[0_8px_26px_rgba(23,48,40,0.05)]">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-2xl bg-violet-50 text-violet-700">
-            <PieChart className="size-5" />
-          </span>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-              Phân bổ trong tháng
-            </p>
-            <h2 className="mt-0.5 text-lg font-black text-slate-900">Chi theo danh mục</h2>
-          </div>
-        </div>
-        <CategoryBreakdown transactions={transactions} categories={customCategories} />
       </section>
     </div>
   )

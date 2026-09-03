@@ -116,19 +116,19 @@ export const DashboardPage = ({
         onMonthChange={onMonthChange}
       />
 
-      <CurrentBalanceCard
-        totalBalance={totalWalletBalance}
-        loading={walletBalanceLoading}
-        walletCount={wallets.length}
-        onViewDetails={onViewAssets}
-      />
-
       <BudgetCard
         budget={budget}
         expense={totals.expense}
         loading={budgetLoading}
         saving={budgetSaving}
         onSave={onBudgetSave}
+      />
+
+      <CurrentBalanceCard
+        totalBalance={totalWalletBalance}
+        loading={walletBalanceLoading}
+        walletCount={wallets.length}
+        onViewDetails={onViewAssets}
       />
 
       <section className="relative mt-5 overflow-hidden rounded-[1.75rem] bg-white p-5 shadow-[0_8px_30px_rgba(23,48,40,0.05)]">
@@ -148,17 +148,6 @@ export const DashboardPage = ({
         </div>
         <CategoryBreakdown transactions={transactions} categories={customCategories} />
       </section>
-
-      <CategoryBudgetCard
-        budgets={categoryBudgets}
-        transactions={transactions}
-        loading={categoryBudgetsLoading}
-        saving={categoryBudgetsSaving}
-        error={categoryBudgetsError}
-        onSave={onCategoryBudgetSave}
-        onRemove={(id) => onCategoryBudgetRemove(id).catch(() => undefined)}
-        customCategories={customCategories}
-      />
 
       <section className="mt-7">
         <div className="mb-4 flex items-end justify-between">
@@ -187,6 +176,17 @@ export const DashboardPage = ({
           categories={customCategories}
         />
       </section>
+
+      <CategoryBudgetCard
+        budgets={categoryBudgets}
+        transactions={transactions}
+        loading={categoryBudgetsLoading}
+        saving={categoryBudgetsSaving}
+        error={categoryBudgetsError}
+        onSave={onCategoryBudgetSave}
+        onRemove={(id) => onCategoryBudgetRemove(id).catch(() => undefined)}
+        customCategories={customCategories}
+      />
     </div>
   )
 }

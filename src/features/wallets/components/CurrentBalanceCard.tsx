@@ -30,8 +30,9 @@ export const CurrentBalanceCard = ({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-amber-800">
-            Tài sản hiện tại
+            Bức tranh lớn
           </p>
+          <h2 className="mt-0.5 text-sm font-black text-amber-950/70">Tổng tiền hiện có</h2>
           <p
             className={`mt-1 truncate text-2xl font-black tracking-tight ${
               totalBalance < 0 ? 'text-red-700' : 'text-slate-900'
@@ -48,7 +49,7 @@ export const CurrentBalanceCard = ({
 
       <div className="relative mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white/60 px-3.5 py-3">
         <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-amber-900/60">
-          <CalendarClock className="size-3.5" /> Tính đến hôm nay
+          <CalendarClock className="size-3.5" /> Không đổi theo tháng
         </span>
         <span className="flex items-center gap-1 whitespace-nowrap text-[11px] font-black text-amber-900">
           Xem các ví <ArrowRight className="size-3.5" />

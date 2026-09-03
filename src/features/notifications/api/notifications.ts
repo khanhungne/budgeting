@@ -8,6 +8,11 @@ export type NotificationPreference = {
 
 export const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY?.trim() ?? ''
 
+const throwApiError = (error: { message?: string; details?: string; hint?: string }) => {
+  const detail = [error.message, error.details, error.hint].filter(Boolean).join(' · ')
+  throw new Error(detail || 'Supabase trả về lỗi không xác định.')
+}
+
 const urlBase64ToUint8Array = (value: string) => {
   const padding = '='.repeat((4 - (value.length % 4)) % 4)
   const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/')
@@ -64,7 +69,7 @@ export const subscribeCurrentDevice = async () => {
     p_platform: detectPushPlatform(),
     p_user_agent: navigator.userAgent,
   })
-  if (error) throw error
+  if (error) throwApiError(error)
   return subscription
 }
 
@@ -81,8 +86,8 @@ export const loadNotificationPreference = async (userId: string) => {
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId),
   ])
-  if (error) throw error
-  if (countError) throw countError
+  if (error) throwApiError(error)
+  if (countError) throwApiError(countError)
   return {
     preference: data as NotificationPreference | null,
     deviceCount: count ?? 0,
@@ -105,7 +110,7 @@ export const saveNotificationPreference = async (
     },
     { onConflict: 'user_id' },
   )
-  if (error) throw error
+  if (error) throwApiError(error)
 }
 
 export const sendTestNotification = async () => {
@@ -113,7 +118,7 @@ export const sendTestNotification = async () => {
   const { data, error } = await client.functions.invoke('send-notifications', {
     body: { mode: 'test' },
   })
-  if (error) throw error
+  if (error) throwApiError(error)
   if (!data?.ok) throw new Error(data?.error || 'Không gửi được thông báo thử.')
   return Number(data.sent ?? 0)
 }
@@ -128,7 +133,7 @@ export const detachCurrentPushSubscription = async () => {
       .from('push_subscriptions')
       .delete()
       .eq('endpoint', subscription.endpoint)
-    deleteError = error
+    deleteError = error ? new Error(error.message) : null
   } finally {
     await subscription.unsubscribe()
   }

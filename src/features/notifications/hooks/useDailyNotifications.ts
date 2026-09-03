@@ -62,13 +62,16 @@ export const useDailyNotifications = (userId: string, active: boolean) => {
     setSaving(true)
     setError(null)
     setMessage(null)
+    let step = 'Xin quyền thông báo'
     try {
       const nextPermission = await Notification.requestPermission()
       setPermission(nextPermission)
       if (nextPermission !== 'granted') {
         throw new Error('Bạn chưa cho phép Ví Nhỏ gửi thông báo.')
       }
+      step = 'Đăng ký thiết bị'
       await subscribeCurrentDevice()
+      step = 'Lưu lịch nhắc'
       await saveNotificationPreference(userId, true, reminderTime)
       setEnabled(true)
       setCurrentDeviceRegistered(true)
@@ -76,7 +79,8 @@ export const useDailyNotifications = (userId: string, active: boolean) => {
       setMessage(`Đã bật nhắc nhở hằng ngày lúc ${reminderTime}.`)
       await refresh()
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Không bật được thông báo.')
+      const detail = reason instanceof Error ? reason.message : 'Lỗi không xác định.'
+      setError(`${step} thất bại: ${detail}`)
     } finally {
       setSaving(false)
     }

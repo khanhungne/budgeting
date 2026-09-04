@@ -45,12 +45,15 @@ VAPID keys của Edge Function.
 
 ## 4. Bật Cron
 
-Mở [`supabase/notification_cron.sql`](../supabase/notification_cron.sql), thay
-`YOUR_LONG_RANDOM_CRON_SECRET` bằng `CRON_SECRET` trong `supabase/.env.local`.
+Mở [`supabase/notification_cron.sql`](../supabase/notification_cron.sql), thay:
+
+- `YOUR_LONG_RANDOM_CRON_SECRET` bằng `CRON_SECRET` trong `supabase/.env.local`.
+- `YOUR_SUPABASE_PUBLISHABLE_KEY` bằng `VITE_SUPABASE_PUBLISHABLE_KEY` trong `.env.local`.
 
 Chạy file trong Supabase SQL Editor. Job `send-daily-push-notifications` sẽ gọi Edge
 Function mỗi 5 phút; mỗi tài khoản chỉ được claim một lần mỗi ngày và retry tối đa ba
-lần nếu gửi thất bại.
+lần nếu gửi thất bại. Hai header `apikey` và `Authorization` trong job cho phép cron đi
+qua Supabase Edge Gateway trong khi Edge Function vẫn giữ xác thực JWT.
 
 Kiểm tra job:
 

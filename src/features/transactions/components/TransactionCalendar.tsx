@@ -139,7 +139,6 @@ export const TransactionCalendar = ({
       <div
         role="grid"
         aria-label="Lịch dòng tiền theo ngày"
-        aria-describedby="cashflow-calendar-legend"
         className="relative z-10 p-3"
       >
         <div role="row" className="grid grid-cols-7 gap-1 pb-2">
@@ -261,23 +260,6 @@ export const TransactionCalendar = ({
             </div>
           ))}
         </div>
-      </div>
-
-      <div id="cashflow-calendar-legend" className="relative z-10 border-t border-[#ece3cf] bg-white/65 px-3 py-3">
-        <div className="grid grid-cols-5 gap-1">
-          {elementOrder.map((elementId) => {
-            const element = elements[elementId]
-            return (
-              <span key={elementId} title={element.meaning} className="min-w-0 text-center">
-                <i className={`mx-auto block h-1 w-5 rounded-[1px] ${element.accent}`} />
-                <b className={`mt-1 block text-[9px] uppercase ${element.text}`}>{element.label}</b>
-              </span>
-            )
-          })}
-        </div>
-        <p className="mt-2 text-center text-[10px] font-semibold text-slate-400">
-          Nét trái: Thu vào · Nét phải: Chi ra · Màu trên: dấu ấn ngũ hành
-        </p>
       </div>
     </section>
   )
